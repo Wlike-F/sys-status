@@ -12,7 +12,7 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | 3. Propose approaches | complete | Documented remote polling, Agent, and hybrid options; recommended Agent. |
 | 4. Present design for approval | complete | User asked to完善文档 after accepting lightweight Agent direction. |
 | 5. Write project docs | complete | Created Chinese requirements, architecture, Agent, API, development prep, database, and GitHub docs. |
-| 6. Initialize Git/GitHub workflow | pending | Initialize repo, commit docs, and prepare GitHub remote instructions or connect remote if provided. |
+| 6. Initialize Git/GitHub workflow | in_progress | Local Git repo initialized and first docs commit created; GitHub remote still needs user-provided repo URL. |
 
 ## Decisions
 

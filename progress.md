@@ -11,3 +11,5 @@
 - Added requirement: users should be able to manually add LAN servers from the web UI.
 - Created Chinese project documentation: overview, requirements, architecture, agent design, API, development preparation, database draft, and GitHub workflow.
 - Renamed documentation files to English slugs while keeping Chinese content and titles, so Markdown links are easier to use on GitHub and Windows.
+- Initialized Git repository and created first documentation commit: `b186a0c docs: 初始化项目需求和接口文档`.
+- Added `.gitattributes` to keep repository text line endings stable across Windows and GitHub.

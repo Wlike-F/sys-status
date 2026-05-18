@@ -18,6 +18,11 @@ public record ServerNodeDto(
         Long memoryTotalMb,
         Long memoryUsedMb,
         Double memoryUsage,
+        Integer gpuCount,
+        Double gpuUsage,
+        Long gpuMemoryTotalMb,
+        Long gpuMemoryUsedMb,
+        Double gpuMemoryUsage,
         LocalDateTime lastHeartbeatAt,
         boolean enabled
 ) {
@@ -38,6 +43,11 @@ public record ServerNodeDto(
                 node.memoryTotalMb(),
                 node.memoryUsedMb(),
                 node.memoryUsage(),
+                node.gpuCount(),
+                node.gpuUsage(),
+                node.gpuMemoryTotalMb(),
+                node.gpuMemoryUsedMb(),
+                node.gpuMemoryUsage(),
                 node.lastHeartbeatAt(),
                 node.enabled()
         );

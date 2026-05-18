@@ -1,13 +1,17 @@
 package com.sysstatus.agent;
 
 import java.net.InetAddress;
+import java.util.List;
 
 import com.sysstatus.agent.client.AgentApiClient;
 import com.sysstatus.agent.config.AgentConfig;
+import com.sysstatus.agent.collector.NvidiaSmiGpuCollector;
+import com.sysstatus.agent.collector.ProcessCommandRunner;
 import com.sysstatus.common.agent.AgentHeartbeatRequest;
 import com.sysstatus.common.agent.AgentRegisterRequest;
 import com.sysstatus.common.agent.AgentRegisterResponse;
 import com.sysstatus.common.agent.AgentSnapshotRequest;
+import com.sysstatus.common.agent.GpuMetric;
 
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
@@ -30,14 +34,29 @@ public class SysStatusAgentApplication {
                 AGENT_VERSION
         ));
 
+        do {
+            submitHeartbeatAndSnapshot(config, client, hostname, osType, registerResponse);
+            if (config.once()) {
+                break;
+            }
+            Thread.sleep(registerResponse.collectIntervalSeconds() * 1000L);
+        } while (true);
+
+        System.out.println("sys-status agent submitted snapshot.");
+    }
+
+    private static void submitHeartbeatAndSnapshot(AgentConfig config, AgentApiClient client, String hostname,
+                                                   String osType, AgentRegisterResponse registerResponse) throws Exception {
         client.heartbeat(new AgentHeartbeatRequest(
                 config.serverId(),
                 registerResponse.agentId(),
                 registerResponse.agentSecret(),
                 AGENT_VERSION
         ));
-
         SnapshotMetrics metrics = collectMetrics();
+        List<GpuMetric> gpus = "LINUX".equals(osType)
+                ? new NvidiaSmiGpuCollector(new ProcessCommandRunner(5)).collect()
+                : List.of();
         client.snapshot(new AgentSnapshotRequest(
                 config.serverId(),
                 registerResponse.agentId(),
@@ -46,10 +65,9 @@ public class SysStatusAgentApplication {
                 osType,
                 metrics.cpuUsage(),
                 metrics.memoryTotalMb(),
-                metrics.memoryUsedMb()
+                metrics.memoryUsedMb(),
+                gpus
         ));
-
-        System.out.println("sys-status agent registered and submitted one snapshot.");
     }
 
     private static SnapshotMetrics collectMetrics() {

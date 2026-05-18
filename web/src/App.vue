@@ -35,12 +35,14 @@ const totals = computed(() => {
   const pending = servers.value.filter((server) => server.status === 'PENDING').length;
   const avgCpu = average(servers.value.map((server) => server.cpuUsage));
   const avgMemory = average(servers.value.map((server) => server.memoryUsage));
+  const avgGpu = average(servers.value.map((server) => server.gpuUsage));
   return {
     total: servers.value.length,
     online,
     pending,
     avgCpu,
     avgMemory,
+    avgGpu,
   };
 });
 
@@ -133,6 +135,13 @@ function formatMemory(server: ServerNode) {
   return `${Math.round(server.memoryUsedMb / 1024)} / ${Math.round(server.memoryTotalMb / 1024)} GB`;
 }
 
+function formatGpuMemory(server: ServerNode) {
+  if (!server.gpuMemoryTotalMb || server.gpuMemoryUsedMb === undefined) {
+    return '-';
+  }
+  return `${Math.round(server.gpuMemoryUsedMb / 1024)} / ${Math.round(server.gpuMemoryTotalMb / 1024)} GB`;
+}
+
 function average(values: Array<number | undefined>) {
   const present = values.filter((value): value is number => typeof value === 'number');
   if (present.length === 0) {
@@ -176,6 +185,11 @@ function toErrorMessage(error: unknown) {
         <strong>{{ formatPercent(totals.avgCpu) }}</strong>
       </div>
       <div class="metric-tile">
+        <Activity :size="19" />
+        <span>&#24179;&#22343; GPU</span>
+        <strong>{{ formatPercent(totals.avgGpu) }}</strong>
+      </div>
+      <div class="metric-tile">
         <Database :size="19" />
         <span>&#24179;&#22343;&#20869;&#23384;</span>
         <strong>{{ formatPercent(totals.avgMemory) }}</strong>
@@ -217,9 +231,19 @@ function toErrorMessage(error: unknown) {
             <strong>{{ formatPercent(server.cpuUsage) }}</strong>
           </div>
           <div class="resource-cell">
+            <span>GPU</span>
+            <strong>{{ formatPercent(server.gpuUsage) }}</strong>
+            <small>{{ server.gpuCount ? `${server.gpuCount} cards` : '-' }}</small>
+          </div>
+          <div class="resource-cell">
             <span>&#20869;&#23384;</span>
             <strong>{{ formatPercent(server.memoryUsage) }}</strong>
             <small>{{ formatMemory(server) }}</small>
+          </div>
+          <div class="resource-cell">
+            <span>GPU MEM</span>
+            <strong>{{ formatPercent(server.gpuMemoryUsage) }}</strong>
+            <small>{{ formatGpuMemory(server) }}</small>
           </div>
           <div class="resource-cell wide">
             <span>Agent</span>

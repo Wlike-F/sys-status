@@ -1,5 +1,7 @@
 package com.sysstatus.common.agent;
 
+import java.util.List;
+
 public record AgentSnapshotRequest(
         Long serverId,
         String agentId,
@@ -8,6 +10,7 @@ public record AgentSnapshotRequest(
         String osType,
         Double cpuUsage,
         Long memoryTotalMb,
-        Long memoryUsedMb
+        Long memoryUsedMb,
+        List<GpuMetric> gpus
 ) {
 }

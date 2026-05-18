@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -88,12 +89,51 @@ class AgentControllerIntegrationTest {
                                   "osType": "LINUX",
                                   "cpuUsage": 12.5,
                                   "memoryTotalMb": 262144,
-                                  "memoryUsedMb": 65536
+                                  "memoryUsedMb": 65536,
+                                  "gpus": [
+                                    {
+                                      "gpuIndex": 0,
+                                      "name": "NVIDIA A100-SXM4-40GB",
+                                      "uuid": "GPU-a100-0",
+                                      "utilizationPercent": 91.0,
+                                      "memoryTotalMb": 40960,
+                                      "memoryUsedMb": 32100,
+                                      "temperatureCelsius": 62.0,
+                                      "powerWatt": 245.13,
+                                      "processes": [
+                                        {
+                                          "pid": 12345,
+                                          "username": "zhangsan",
+                                          "processName": "python",
+                                          "usedMemoryMb": 16050
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "gpuIndex": 1,
+                                      "name": "NVIDIA A100-SXM4-40GB",
+                                      "uuid": "GPU-a100-1",
+                                      "utilizationPercent": 12.0,
+                                      "memoryTotalMb": 40960,
+                                      "memoryUsedMb": 1024,
+                                      "temperatureCelsius": 38.0,
+                                      "powerWatt": 79.40,
+                                      "processes": []
+                                    }
+                                  ]
                                 }
                                 """.formatted(serverId, agentId, agentSecret)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.status").value("ONLINE"))
                 .andExpect(jsonPath("$.data.cpuUsage").value(12.5));
+
+        mockMvc.perform(get("/api/servers"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].gpuCount").value(2))
+                .andExpect(jsonPath("$.data[0].gpuUsage").value(51.5))
+                .andExpect(jsonPath("$.data[0].gpuMemoryTotalMb").value(81920))
+                .andExpect(jsonPath("$.data[0].gpuMemoryUsedMb").value(33124))
+                .andExpect(jsonPath("$.data[0].gpuMemoryUsage").value(40.43));
     }
 }

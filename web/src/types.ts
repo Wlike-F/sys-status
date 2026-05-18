@@ -17,6 +17,11 @@ export interface ServerNode {
   memoryTotalMb?: number;
   memoryUsedMb?: number;
   memoryUsage?: number;
+  gpuCount?: number;
+  gpuUsage?: number;
+  gpuMemoryTotalMb?: number;
+  gpuMemoryUsedMb?: number;
+  gpuMemoryUsage?: number;
   lastHeartbeatAt?: string;
   enabled: boolean;
 }

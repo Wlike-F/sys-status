@@ -37,3 +37,13 @@
 - Reworked dashboard copy to avoid Windows encoding issues in source files while still rendering Chinese text in the browser.
 - Upgraded Vitest to `^4.1.6` after audit identified moderate vulnerabilities in the old nested Vite/esbuild chain; `npm audit --prefix web --audit-level=moderate` now reports 0 vulnerabilities.
 - Frontend verification passed: `npm run test --prefix web` passed 1 test file / 2 tests, `npm run build --prefix web` completed successfully, Vite returned HTTP 200, and `/api/servers` returned the online local loop server.
+- Started step 6 Linux A100 collection and wrote the plan at `docs/superpowers/plans/2026-05-18-linux-a100-collection.md`.
+- Added red tests first for A100 `nvidia-smi` CSV parsing and backend GPU summary fields on `/api/servers`; both failed for the expected missing implementation reasons.
+- Added common GPU DTOs, Linux `nvidia-smi` collector, GPU process username lookup, backend GPU summary denormalization, and raw snapshot JSON storage.
+- Updated the Vue dashboard to display average GPU usage, per-server GPU usage, GPU card count, and GPU memory usage.
+- Changed Agent behavior so normal runs keep collecting in a loop; `--once` is available for one-shot verification.
+- Applied the local MySQL `sys-status.server_node` migration for GPU summary columns.
+- Added `docs/08-linux-a100-agent.md` with Linux A100 deployment and collection instructions.
+- Full verification passed: `mvn test`, `npm run test --prefix web`, `npm run build --prefix web`, and `npm audit --prefix web --audit-level=moderate`.
+- Restarted the local backend with the new GPU-aware code and verified a real `--once` Agent submission against MySQL-backed `http://127.0.0.1:8080/api/servers`.
+- Added Maven Shade packaging for the Agent so `agent/target/sys-status-agent.jar` is directly executable with `java -jar`; verified the executable jar with a real `--once` submission.

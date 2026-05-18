@@ -6,14 +6,18 @@ import java.time.LocalDateTime;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sysstatus.common.agent.AgentSnapshotRequest;
 
 @Repository
 public class MetricSnapshotRepository {
     private final JdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper;
 
-    public MetricSnapshotRepository(JdbcTemplate jdbcTemplate) {
+    public MetricSnapshotRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.objectMapper = objectMapper;
     }
 
     public void insert(AgentSnapshotRequest request, Double memoryUsage, LocalDateTime now) {
@@ -31,6 +35,14 @@ public class MetricSnapshotRepository {
                 request.memoryTotalMb(),
                 request.memoryUsedMb(),
                 memoryUsage,
-                "{}");
+                serializeRawPayload(request));
+    }
+
+    private String serializeRawPayload(AgentSnapshotRequest request) {
+        try {
+            return objectMapper.writeValueAsString(request);
+        } catch (JsonProcessingException error) {
+            return "{}";
+        }
     }
 }

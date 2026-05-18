@@ -10,11 +10,13 @@ class AgentConfigTest {
         AgentConfig config = AgentConfig.fromArgs(new String[]{
                 "--server-url", "http://localhost:8080",
                 "--server-id", "7",
-                "--token", "register-token"
+                "--token", "register-token",
+                "--once"
         });
 
         assertEquals("http://localhost:8080", config.serverUrl());
         assertEquals(7L, config.serverId());
         assertEquals("register-token", config.registerToken());
+        assertEquals(true, config.once());
     }
 }

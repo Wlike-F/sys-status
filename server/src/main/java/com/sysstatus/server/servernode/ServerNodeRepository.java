@@ -87,15 +87,20 @@ public class ServerNodeRepository {
 
     public void updateSnapshot(long serverId, String hostname, String osType, Double cpuUsage,
                                Long memoryTotalMb, Long memoryUsedMb, Double memoryUsage,
+                               Integer gpuCount, Double gpuUsage, Long gpuMemoryTotalMb,
+                               Long gpuMemoryUsedMb, Double gpuMemoryUsage,
                                LocalDateTime now) {
         jdbcTemplate.update("""
                 UPDATE server_node
                 SET hostname = ?, os_type = ?, status = 'ONLINE', cpu_usage = ?,
                     memory_total_mb = ?, memory_used_mb = ?, memory_usage = ?,
+                    gpu_count = ?, gpu_usage = ?, gpu_memory_total_mb = ?,
+                    gpu_memory_used_mb = ?, gpu_memory_usage = ?,
                     last_heartbeat_at = ?, updated_at = ?
                 WHERE id = ?
                 """,
                 hostname, osType, cpuUsage, memoryTotalMb, memoryUsedMb, memoryUsage,
+                gpuCount, gpuUsage, gpuMemoryTotalMb, gpuMemoryUsedMb, gpuMemoryUsage,
                 Timestamp.valueOf(now), Timestamp.valueOf(now), serverId);
     }
 
@@ -117,6 +122,11 @@ public class ServerNodeRepository {
                 getLong(rs, "memory_total_mb"),
                 getLong(rs, "memory_used_mb"),
                 getDouble(rs, "memory_usage"),
+                getInteger(rs, "gpu_count"),
+                getDouble(rs, "gpu_usage"),
+                getLong(rs, "gpu_memory_total_mb"),
+                getLong(rs, "gpu_memory_used_mb"),
+                getDouble(rs, "gpu_memory_usage"),
                 getDateTime(rs, "last_heartbeat_at"),
                 rs.getBoolean("enabled"),
                 getDateTime(rs, "created_at"),
@@ -131,6 +141,11 @@ public class ServerNodeRepository {
 
     private static Long getLong(ResultSet rs, String column) throws SQLException {
         long value = rs.getLong(column);
+        return rs.wasNull() ? null : value;
+    }
+
+    private static Integer getInteger(ResultSet rs, String column) throws SQLException {
+        int value = rs.getInt(column);
         return rs.wasNull() ? null : value;
     }
 

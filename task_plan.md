@@ -18,6 +18,7 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | 9. Backend basic APIs | complete | Implemented server management APIs, schema initialization, and integration tests. |
 | 10. Agent communication loop | complete | Implemented Agent register, heartbeat, minimal CPU/memory snapshot loop, and verified against local MySQL. |
 | 11. Frontend minimal dashboard | complete | Implemented Vue dashboard for server overview, manual server registration, token regeneration, and Agent install command copy flow; frontend tests/build/audit passed. |
+| 12. Linux A100 collection | complete | Added TDD plan, Linux `nvidia-smi` GPU collector, backend GPU summary storage, Vue GPU summary UI, local MySQL migration, and deployment instructions. |
 
 ## Decisions
 
@@ -33,6 +34,7 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | Local MySQL passwordless login | verified | MySQL 5.7.35 root login without password works locally. |
 | Database name: `sys-status` | requested | User explicitly asked to create this database; SQL must quote it because of the hyphen. |
 | Frontend direction | accepted | Build the usable monitoring console first, with an operations-focused dashboard instead of a landing page. |
+| Linux GPU collection command | accepted | Use `nvidia-smi` CSV query output for NVIDIA GPU card and GPU process collection. |
 
 ## Errors Encountered
 
@@ -48,3 +50,4 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | `mvn -f agent/pom.xml exec:java -Dexec.args=...` was misparsed on PowerShell | Tried to run Agent with URL-containing args directly in PowerShell | Ran the Maven exec command through `cmd.exe /c` with quoted `-Dexec.args`. |
 | `lucide-vue-next` was deprecated and `@lucide/vue@0.468.0` did not exist | Added icons for dashboard UI | Switched to `@lucide/vue@1.16.0`. |
 | Frontend audit reported moderate vulnerabilities through Vitest's nested Vite/esbuild chain | Ran `npm audit --prefix web --audit-level=moderate` | Upgraded Vitest to `^4.1.6`; audit then reported 0 vulnerabilities. |
+| Maven `-D` options with dots were misparsed by PowerShell | Ran targeted Maven tests with `-Dsurefire.failIfNoSpecifiedTests=false` | Quoted Maven properties, for example `"-Dsurefire.failIfNoSpecifiedTests=false"`. |

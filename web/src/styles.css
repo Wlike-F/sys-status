@@ -118,7 +118,7 @@ h2 {
 
 .metrics-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -205,7 +205,7 @@ label span {
 
 .server-row {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) 108px 136px 150px 92px;
+  grid-template-columns: minmax(240px, 1fr) 92px 104px 118px 118px 150px 92px;
   gap: 12px;
   align-items: center;
   min-height: 92px;
@@ -406,7 +406,7 @@ code {
   }
 
   .server-row {
-    grid-template-columns: 1fr 96px 120px 130px 88px;
+    grid-template-columns: 1fr 88px 98px 110px 110px 130px 88px;
   }
 }
 

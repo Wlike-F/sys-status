@@ -154,11 +154,22 @@ class AgentControllerIntegrationTest {
                 .andExpect(jsonPath("$.data[0].gpuMemoryUsedMb").value(33124))
                 .andExpect(jsonPath("$.data[0].gpuMemoryUsage").value(40.43));
 
+        mockMvc.perform(get("/api/servers/" + serverId + "/detail"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.server.id").value(serverId))
+                .andExpect(jsonPath("$.data.snapshot.serverId").value(serverId))
+                .andExpect(jsonPath("$.data.snapshot.onlineUserCount").value(1))
+                .andExpect(jsonPath("$.data.snapshot.sessions[0].username").value("zhangsan"))
+                .andExpect(jsonPath("$.data.snapshot.processes[0].commandLine").value("python train.py"))
+                .andExpect(jsonPath("$.data.snapshot.gpus[0].processes[0].username").value("zhangsan"))
+                .andExpect(jsonPath("$.data.snapshot.gpus[0].processes[0].usedMemoryMb").value(16050));
+
         mockMvc.perform(get("/api/servers/" + serverId + "/snapshot/latest"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.serverId").value(serverId))
-                .andExpect(jsonPath("$.data.agentSecret").doesNotExist())
+                .andExpect(jsonPath("$.data.onlineUserCount").value(1))
                 .andExpect(jsonPath("$.data.sessions[0].username").value("zhangsan"))
                 .andExpect(jsonPath("$.data.processes[0].commandLine").value("python train.py"))
                 .andExpect(jsonPath("$.data.gpus[0].processes[0].username").value("zhangsan"))

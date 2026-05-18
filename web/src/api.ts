@@ -1,4 +1,11 @@
-import type { ApiResponse, CreateServerPayload, CreateServerResponse, ServerNode, SnapshotDetail } from './types';
+import type {
+  ApiResponse,
+  CreateServerPayload,
+  CreateServerResponse,
+  ServerDetailResponse,
+  ServerNode,
+  SnapshotDetail,
+} from './types';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -37,4 +44,8 @@ export function regenerateRegisterToken(serverId: number): Promise<CreateServerR
 
 export function getLatestSnapshot(serverId: number): Promise<SnapshotDetail> {
   return request<SnapshotDetail>(`/api/servers/${serverId}/snapshot/latest`);
+}
+
+export function getServerDetail(serverId: number): Promise<ServerDetailResponse> {
+  return request<ServerDetailResponse>(`/api/servers/${serverId}/detail`);
 }

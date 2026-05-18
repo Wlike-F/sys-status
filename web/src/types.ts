@@ -78,14 +78,22 @@ export interface GpuMetric {
 
 export interface SnapshotDetail {
   serverId: number;
+  collectedAt?: string;
   hostname?: string;
   osType?: OsType;
   cpuUsage?: number;
   memoryTotalMb?: number;
   memoryUsedMb?: number;
+  memoryUsage?: number;
+  onlineUserCount?: number;
   sessions?: SessionMetric[];
   processes?: ProcessMetric[];
   gpus?: GpuMetric[];
+}
+
+export interface ServerDetailResponse {
+  server: ServerNode;
+  snapshot: SnapshotDetail;
 }
 
 export interface ApiResponse<T> {

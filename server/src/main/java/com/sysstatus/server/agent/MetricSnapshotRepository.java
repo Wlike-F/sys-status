@@ -40,15 +40,24 @@ public class MetricSnapshotRepository {
                 serializeRawPayload(request));
     }
 
-    public Optional<String> findLatestRawJson(long serverId) {
-        List<String> rows = jdbcTemplate.query("""
-                SELECT raw_json
+    public Optional<LatestSnapshotRecord> findLatestSnapshot(long serverId) {
+        List<LatestSnapshotRecord> rows = jdbcTemplate.query("""
+                SELECT collected_at, memory_usage, raw_json
                 FROM metric_snapshot
                 WHERE server_id = ?
                 ORDER BY collected_at DESC, id DESC
                 LIMIT 1
-                """, (rs, rowNum) -> rs.getString("raw_json"), serverId);
+                """, (rs, rowNum) -> new LatestSnapshotRecord(
+                rs.getTimestamp("collected_at").toLocalDateTime(),
+                readNullableDouble(rs, "memory_usage"),
+                rs.getString("raw_json")
+        ), serverId);
         return rows.stream().findFirst();
+    }
+
+    private Double readNullableDouble(java.sql.ResultSet rs, String column) throws java.sql.SQLException {
+        double value = rs.getDouble(column);
+        return rs.wasNull() ? null : value;
     }
 
     private String serializeRawPayload(AgentSnapshotRequest request) {

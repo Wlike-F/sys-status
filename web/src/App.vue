@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import {
   Activity,
   Copy,
@@ -10,9 +10,18 @@ import {
   RefreshCw,
   Server,
   Terminal,
+  Users,
+  X,
 } from '@lucide/vue';
-import { createServer, getLatestSnapshot, listServers, regenerateRegisterToken } from './api';
-import type { CreateServerPayload, CreateServerResponse, OsType, ServerNode, ServerStatus, SnapshotDetail } from './types';
+import { createServer, getServerDetail, listServers, regenerateRegisterToken } from './api';
+import type {
+  CreateServerPayload,
+  CreateServerResponse,
+  OsType,
+  ServerDetailResponse,
+  ServerNode,
+  ServerStatus,
+} from './types';
 
 const servers = ref<ServerNode[]>([]);
 const loading = ref(false);
@@ -21,8 +30,9 @@ const errorMessage = ref('');
 const lastInstall = ref<CreateServerResponse | null>(null);
 const copied = ref(false);
 const selectedServer = ref<ServerNode | null>(null);
-const snapshot = ref<SnapshotDetail | null>(null);
+const detail = ref<ServerDetailResponse | null>(null);
 const detailLoading = ref(false);
+const detailError = ref('');
 
 const form = reactive<CreateServerPayload>({
   name: '',
@@ -32,6 +42,10 @@ const form = reactive<CreateServerPayload>({
   location: '',
   description: '',
 });
+
+const detailOpen = computed(() => Boolean(selectedServer.value));
+const detailServer = computed(() => detail.value?.server ?? selectedServer.value);
+const detailSnapshot = computed(() => detail.value?.snapshot ?? null);
 
 const totals = computed(() => {
   const online = servers.value.filter((server) => server.status === 'ONLINE').length;
@@ -49,8 +63,52 @@ const totals = computed(() => {
   };
 });
 
+const detailCards = computed(() => {
+  const server = detailServer.value;
+  const snapshot = detailSnapshot.value;
+  return [
+    {
+      label: 'Online users',
+      value: snapshot?.onlineUserCount ?? 0,
+      hint: `${snapshot?.sessions?.length ?? 0} sessions`,
+    },
+    {
+      label: 'CPU usage',
+      value: formatPercent(snapshot?.cpuUsage),
+      hint: server?.status === 'ONLINE' ? 'Latest sample' : statusLabel(server?.status ?? 'PENDING'),
+    },
+    {
+      label: 'GPU usage',
+      value: formatPercent(server?.gpuUsage),
+      hint: `${server?.gpuCount ?? snapshot?.gpus?.length ?? 0} cards`,
+    },
+    {
+      label: 'Memory usage',
+      value: formatPercent(snapshot?.memoryUsage ?? server?.memoryUsage),
+      hint: formatMemoryPair(snapshot?.memoryUsedMb, snapshot?.memoryTotalMb),
+    },
+    {
+      label: 'GPU memory',
+      value: formatPercent(server?.gpuMemoryUsage),
+      hint: formatGpuMemoryPair(server?.gpuMemoryUsedMb, server?.gpuMemoryTotalMb),
+    },
+  ];
+});
+
 onMounted(() => {
   void loadServers();
+});
+
+watch(
+  detailOpen,
+  (open) => {
+    document.body.style.overflow = open ? 'hidden' : '';
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = '';
 });
 
 async function loadServers() {
@@ -90,16 +148,32 @@ async function refreshToken(serverId: number) {
 
 async function openDetails(server: ServerNode) {
   selectedServer.value = server;
-  snapshot.value = null;
+  detail.value = null;
+  detailError.value = '';
   detailLoading.value = true;
   errorMessage.value = '';
+  const requestServerId = server.id;
   try {
-    snapshot.value = await getLatestSnapshot(server.id);
+    const response = await getServerDetail(server.id);
+    if (selectedServer.value?.id === requestServerId) {
+      detail.value = response;
+    }
   } catch (error) {
-    errorMessage.value = toErrorMessage(error);
+    if (selectedServer.value?.id === requestServerId) {
+      detailError.value = toErrorMessage(error);
+    }
   } finally {
-    detailLoading.value = false;
+    if (selectedServer.value?.id === requestServerId) {
+      detailLoading.value = false;
+    }
   }
+}
+
+function closeDetails() {
+  selectedServer.value = null;
+  detail.value = null;
+  detailError.value = '';
+  detailLoading.value = false;
 }
 
 async function copyCommand() {
@@ -124,20 +198,20 @@ function resetForm() {
 
 function statusLabel(status: ServerStatus) {
   const labels: Record<ServerStatus, string> = {
-    PENDING: '\u5f85\u63a5\u5165',
-    ONLINE: '\u5728\u7ebf',
-    WARN: '\u5ef6\u8fdf',
-    OFFLINE: '\u79bb\u7ebf',
-    DISABLED: '\u505c\u7528',
+    PENDING: 'Pending',
+    ONLINE: 'Online',
+    WARN: 'Lagging',
+    OFFLINE: 'Offline',
+    DISABLED: 'Disabled',
   };
   return labels[status] ?? status;
 }
 
-function statusClass(status: ServerStatus) {
-  return `status-${status.toLowerCase()}`;
+function statusClass(status: ServerStatus | undefined) {
+  return `status-${(status ?? 'PENDING').toLowerCase()}`;
 }
 
-function osLabel(osType: OsType) {
+function osLabel(osType?: OsType) {
   return osType === 'WINDOWS' ? 'Windows' : 'Linux';
 }
 
@@ -146,21 +220,53 @@ function formatPercent(value?: number) {
 }
 
 function formatMemory(server: ServerNode) {
-  if (!server.memoryTotalMb || !server.memoryUsedMb) {
+  if (typeof server.memoryTotalMb !== 'number' || typeof server.memoryUsedMb !== 'number') {
     return '-';
   }
   return `${Math.round(server.memoryUsedMb / 1024)} / ${Math.round(server.memoryTotalMb / 1024)} GB`;
 }
 
+function formatMemoryPair(usedMb?: number, totalMb?: number) {
+  if (typeof usedMb !== 'number' || typeof totalMb !== 'number') {
+    return '-';
+  }
+  return `${Math.round(usedMb / 1024)} / ${Math.round(totalMb / 1024)} GB`;
+}
+
 function formatGpuMemory(server: ServerNode) {
-  if (!server.gpuMemoryTotalMb || server.gpuMemoryUsedMb === undefined) {
+  if (typeof server.gpuMemoryTotalMb !== 'number' || typeof server.gpuMemoryUsedMb !== 'number') {
     return '-';
   }
   return `${Math.round(server.gpuMemoryUsedMb / 1024)} / ${Math.round(server.gpuMemoryTotalMb / 1024)} GB`;
 }
 
+function formatGpuMemoryPair(usedMb?: number, totalMb?: number) {
+  if (typeof usedMb !== 'number' || typeof totalMb !== 'number') {
+    return '-';
+  }
+  return `${Math.round(usedMb / 1024)} / ${Math.round(totalMb / 1024)} GB`;
+}
+
 function formatMb(value?: number) {
   return typeof value === 'number' ? `${Math.round(value)} MB` : '-';
+}
+
+function formatTimestamp(value?: string) {
+  if (!value) {
+    return '-';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(date);
 }
 
 function average(values: Array<number | undefined>) {
@@ -172,7 +278,7 @@ function average(values: Array<number | undefined>) {
 }
 
 function toErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : '\u8bf7\u6c42\u5931\u8d25';
+  return error instanceof Error ? error.message : 'Request failed';
 }
 </script>
 
@@ -181,38 +287,38 @@ function toErrorMessage(error: unknown) {
     <header class="topbar">
       <div>
         <p class="eyebrow">Lab Resource Console</p>
-        <h1>&#23454;&#39564;&#23460;&#26381;&#21153;&#22120;&#29366;&#24577;&#30417;&#25511;</h1>
+        <h1>Server resource dashboard</h1>
       </div>
-      <button class="icon-button" type="button" :disabled="loading" title="&#21047;&#26032;&#26381;&#21153;&#22120;&#21015;&#34920;" @click="loadServers">
+      <button class="icon-button" type="button" :disabled="loading" title="Refresh server list" @click="loadServers">
         <RefreshCw :size="18" :class="{ spinning: loading }" />
-        <span>&#21047;&#26032;</span>
+        <span>Refresh</span>
       </button>
     </header>
 
-    <section class="metrics-strip" aria-label="&#36164;&#28304;&#25688;&#35201;">
+    <section class="metrics-strip" aria-label="Resource summary">
       <div class="metric-tile">
         <Server :size="19" />
-        <span>&#26381;&#21153;&#22120;</span>
+        <span>Servers</span>
         <strong>{{ totals.online }} / {{ totals.total }}</strong>
       </div>
       <div class="metric-tile">
         <Terminal :size="19" />
-        <span>&#24453;&#25509;&#20837;</span>
+        <span>Pending</span>
         <strong>{{ totals.pending }}</strong>
       </div>
       <div class="metric-tile">
         <Cpu :size="19" />
-        <span>&#24179;&#22343; CPU</span>
+        <span>Avg CPU</span>
         <strong>{{ formatPercent(totals.avgCpu) }}</strong>
       </div>
       <div class="metric-tile">
         <Activity :size="19" />
-        <span>&#24179;&#22343; GPU</span>
+        <span>Avg GPU</span>
         <strong>{{ formatPercent(totals.avgGpu) }}</strong>
       </div>
       <div class="metric-tile">
         <Database :size="19" />
-        <span>&#24179;&#22343;&#20869;&#23384;</span>
+        <span>Avg Memory</span>
         <strong>{{ formatPercent(totals.avgMemory) }}</strong>
       </div>
     </section>
@@ -224,15 +330,15 @@ function toErrorMessage(error: unknown) {
         <div class="panel-heading">
           <div>
             <p class="section-kicker">Servers</p>
-            <h2>&#26381;&#21153;&#22120;&#21015;&#34920;</h2>
+            <h2>Server list</h2>
           </div>
-          <span class="count-chip">{{ servers.length }} &#21488;</span>
+          <span class="count-chip">{{ servers.length }} nodes</span>
         </div>
 
         <div v-if="servers.length === 0" class="empty-state">
           <MonitorCog :size="34" />
-          <strong>&#36824;&#27809;&#26377;&#26381;&#21153;&#22120;</strong>
-          <span>&#28155;&#21152;&#19968;&#21488;&#23616;&#22495;&#32593;&#26381;&#21153;&#22120;&#21518;&#65292;&#36825;&#37324;&#20250;&#26174;&#31034; Agent &#25509;&#20837;&#29366;&#24577;&#12290;</span>
+          <strong>No servers yet</strong>
+          <span>Add a lab server and this view will show Agent status and resource usage.</span>
         </div>
 
         <article v-for="server in servers" :key="server.id" class="server-row">
@@ -243,7 +349,7 @@ function toErrorMessage(error: unknown) {
                 <strong>{{ server.name }}</strong>
                 <span>{{ osLabel(server.osType) }}</span>
               </div>
-              <p>{{ server.host }} / {{ server.gpuType || '\u672a\u586b\u5199 GPU' }}</p>
+              <p>{{ server.host }} / {{ server.gpuType || 'GPU not set' }}</p>
             </div>
           </div>
 
@@ -257,7 +363,7 @@ function toErrorMessage(error: unknown) {
             <small>{{ server.gpuCount ? `${server.gpuCount} cards` : '-' }}</small>
           </div>
           <div class="resource-cell">
-            <span>&#20869;&#23384;</span>
+            <span>Memory</span>
             <strong>{{ formatPercent(server.memoryUsage) }}</strong>
             <small>{{ formatMemory(server) }}</small>
           </div>
@@ -269,13 +375,13 @@ function toErrorMessage(error: unknown) {
           <div class="resource-cell wide">
             <span>Agent</span>
             <strong>{{ statusLabel(server.status) }}</strong>
-            <small>{{ server.agentVersion || server.lastHeartbeatAt || '\u7b49\u5f85\u6ce8\u518c' }}</small>
+            <small>{{ server.agentVersion || server.lastHeartbeatAt || 'Waiting' }}</small>
           </div>
-          <button class="ghost-button" type="button" title="&#37325;&#26032;&#29983;&#25104;&#23433;&#35013;&#21629;&#20196;" @click="refreshToken(server.id)">
+          <button class="ghost-button" type="button" title="Regenerate install command" @click="refreshToken(server.id)">
             <RefreshCw :size="16" />
             <span>Token</span>
           </button>
-          <button class="ghost-button" type="button" title="&#26597;&#30475;&#36827;&#31243;&#26126;&#32454;" @click="openDetails(server)">
+          <button class="ghost-button" type="button" title="Open details" @click="openDetails(server)">
             <Terminal :size="16" />
             <span>Detail</span>
           </button>
@@ -287,21 +393,21 @@ function toErrorMessage(error: unknown) {
           <div class="panel-heading compact">
             <div>
               <p class="section-kicker">Register</p>
-              <h2>&#28155;&#21152;&#26381;&#21153;&#22120;</h2>
+              <h2>Add server</h2>
             </div>
             <Plus :size="20" />
           </div>
 
           <label>
-            <span>&#21517;&#31216;</span>
+            <span>Name</span>
             <input v-model.trim="form.name" required placeholder="A100-Server" />
           </label>
           <label>
-            <span>IP / &#22495;&#21517;</span>
+            <span>IP / Host</span>
             <input v-model.trim="form.host" required placeholder="192.168.1.11" />
           </label>
           <label>
-            <span>&#31995;&#32479;</span>
+            <span>OS</span>
             <select v-model="form.osType">
               <option value="LINUX">Linux</option>
               <option value="WINDOWS">Windows</option>
@@ -312,65 +418,171 @@ function toErrorMessage(error: unknown) {
             <input v-model.trim="form.gpuType" placeholder="8 x NVIDIA A100" />
           </label>
           <label>
-            <span>&#20301;&#32622;</span>
-            <input v-model.trim="form.location" placeholder="&#23454;&#39564;&#23460;&#26426;&#26588;" />
+            <span>Location</span>
+            <input v-model.trim="form.location" placeholder="Lab rack" />
           </label>
           <label>
-            <span>&#22791;&#27880;</span>
-            <textarea v-model.trim="form.description" rows="3" placeholder="&#35757;&#32451;&#26381;&#21153;&#22120; / CPU &#20027;&#26426;" />
+            <span>Notes</span>
+            <textarea v-model.trim="form.description" rows="3" placeholder="Training node / CPU host" />
           </label>
 
           <button class="primary-button" type="submit" :disabled="saving">
             <Plus :size="17" />
-            <span v-if="saving">&#28155;&#21152;&#20013;</span>
-            <span v-else>&#28155;&#21152;&#26381;&#21153;&#22120;</span>
+            <span v-if="saving">Adding</span>
+            <span v-else>Add server</span>
           </button>
         </form>
 
         <section v-if="lastInstall" class="install-panel">
           <div class="install-title">
             <Activity :size="18" />
-            <strong>Agent &#23433;&#35013;&#21629;&#20196;</strong>
+            <strong>Agent install command</strong>
           </div>
           <code>{{ lastInstall.installCommand }}</code>
-          <button class="copy-button" type="button" title="&#22797;&#21046;&#23433;&#35013;&#21629;&#20196;" @click="copyCommand">
+          <button class="copy-button" type="button" title="Copy install command" @click="copyCommand">
             <Copy :size="16" />
-            <span v-if="copied">&#24050;&#22797;&#21046;</span>
-            <span v-else>&#22797;&#21046;&#21629;&#20196;</span>
+            <span v-if="copied">Copied</span>
+            <span v-else>Copy command</span>
           </button>
-        </section>
-
-        <section v-if="selectedServer" class="detail-panel">
-          <div class="install-title">
-            <Terminal :size="18" />
-            <strong>{{ selectedServer.name }} &#26126;&#32454;</strong>
-          </div>
-          <p v-if="detailLoading" class="muted-line">&#21152;&#36733;&#20013;</p>
-          <template v-else-if="snapshot">
-            <div class="detail-block">
-              <span>&#22312;&#32447;&#29992;&#25143;</span>
-              <strong>{{ snapshot.sessions?.length || 0 }}</strong>
-              <small v-for="session in snapshot.sessions?.slice(0, 4)" :key="`${session.username}-${session.terminal}`">
-                {{ session.username || '-' }} / {{ session.terminal || '-' }}
-              </small>
-            </div>
-            <div class="detail-block">
-              <span>&#36827;&#31243; Top</span>
-              <small v-for="process in snapshot.processes?.slice(0, 5)" :key="process.pid">
-                {{ process.username || '-' }} / {{ process.processName || '-' }} / {{ formatMb(process.memoryMb) }}
-              </small>
-            </div>
-            <div class="detail-block">
-              <span>GPU Processes</span>
-              <template v-for="gpu in snapshot.gpus" :key="gpu.uuid || gpu.gpuIndex">
-                <small v-for="process in gpu.processes" :key="`${gpu.gpuIndex}-${process.pid}`">
-                  GPU{{ gpu.gpuIndex }} / {{ process.username || '-' }} / {{ process.processName || '-' }} / {{ formatMb(process.usedMemoryMb) }}
-                </small>
-              </template>
-            </div>
-          </template>
         </section>
       </aside>
     </div>
+
+    <div v-if="detailOpen" class="detail-mask" @click="closeDetails" />
+    <aside v-if="detailOpen" class="detail-drawer" aria-label="Server detail">
+      <header class="detail-header">
+        <div>
+          <p class="eyebrow detail-eyebrow">Server Detail</p>
+          <h2>{{ detailServer?.name || selectedServer?.name }}</h2>
+          <p class="detail-subtitle">
+            {{ detailServer?.host || '-' }} / {{ osLabel(detailServer?.osType) }} /
+            {{ detailServer?.gpuType || 'GPU not set' }}
+          </p>
+        </div>
+        <button class="drawer-close" type="button" title="Close detail" @click="closeDetails">
+          <X :size="18" />
+        </button>
+      </header>
+
+      <div class="detail-meta">
+        <span class="status-pill" :class="statusClass(detailServer?.status)">
+          {{ statusLabel(detailServer?.status ?? 'PENDING') }}
+        </span>
+        <span>Host {{ detailSnapshot?.hostname || detailServer?.hostname || 'Unknown' }}</span>
+        <span>Captured {{ formatTimestamp(detailSnapshot?.collectedAt) }}</span>
+      </div>
+
+      <div class="detail-summary-grid">
+        <article v-for="card in detailCards" :key="card.label" class="detail-summary-card">
+          <span>{{ card.label }}</span>
+          <strong>{{ card.value }}</strong>
+          <small>{{ card.hint }}</small>
+        </article>
+      </div>
+
+      <div v-if="detailLoading" class="detail-loading">
+        <RefreshCw :size="18" class="spinning" />
+        <span>Loading detail</span>
+      </div>
+      <p v-else-if="detailError" class="detail-error">{{ detailError }}</p>
+      <template v-else-if="detailSnapshot">
+        <section class="detail-section">
+          <div class="section-head">
+            <Users :size="16" />
+            <strong>Online users</strong>
+            <span>{{ detailSnapshot.onlineUserCount ?? 0 }}</span>
+          </div>
+          <div v-if="detailSnapshot.sessions?.length" class="session-list">
+            <article
+              v-for="session in detailSnapshot.sessions.slice(0, 8)"
+              :key="`${session.username}-${session.terminal}-${session.loginTime}`"
+              class="session-row"
+            >
+              <div>
+                <strong>{{ session.username || '-' }}</strong>
+                <p>{{ session.terminal || '-' }} / {{ session.host || '-' }}</p>
+              </div>
+              <span>{{ formatTimestamp(session.loginTime) }}</span>
+            </article>
+          </div>
+          <p v-else class="empty-note">No active sessions</p>
+        </section>
+
+        <section class="detail-section">
+          <div class="section-head">
+            <Terminal :size="16" />
+            <strong>Top processes</strong>
+            <span>{{ detailSnapshot.processes?.length ?? 0 }}</span>
+          </div>
+          <div v-if="detailSnapshot.processes?.length" class="process-list">
+            <article
+              v-for="(process, index) in detailSnapshot.processes.slice(0, 8)"
+              :key="`${process.pid ?? 'proc'}-${process.processName ?? index}`"
+              class="process-row"
+            >
+              <div class="process-main">
+                <strong>{{ process.processName || '-' }}</strong>
+                <small>{{ process.commandLine || '-' }}</small>
+              </div>
+              <div class="process-meta">
+                <span>{{ process.username || '-' }}</span>
+                <strong>{{ formatPercent(process.cpuUsage) }}</strong>
+                <small>{{ formatMb(process.memoryMb) }}</small>
+              </div>
+            </article>
+          </div>
+          <p v-else class="empty-note">No process sample</p>
+        </section>
+
+        <section class="detail-section">
+          <div class="section-head">
+            <Activity :size="16" />
+            <strong>GPU detail</strong>
+            <span>{{ detailSnapshot.gpus?.length ?? 0 }}</span>
+          </div>
+          <div v-if="detailSnapshot.gpus?.length" class="gpu-list">
+            <article v-for="gpu in detailSnapshot.gpus" :key="gpu.uuid || gpu.gpuIndex" class="gpu-card">
+              <div class="gpu-card-head">
+                <strong>GPU{{ gpu.gpuIndex }} / {{ gpu.name || '-' }}</strong>
+                <span>{{ formatPercent(gpu.utilizationPercent) }}</span>
+              </div>
+              <div class="gpu-stat-grid">
+                <div>
+                  <span>Memory</span>
+                  <strong>{{ formatGpuMemoryPair(gpu.memoryUsedMb, gpu.memoryTotalMb) }}</strong>
+                </div>
+                <div>
+                  <span>Temp</span>
+                  <strong>{{ typeof gpu.temperatureCelsius === 'number' ? `${gpu.temperatureCelsius.toFixed(1)} C` : '-' }}</strong>
+                </div>
+                <div>
+                  <span>Power</span>
+                  <strong>{{ typeof gpu.powerWatt === 'number' ? `${gpu.powerWatt.toFixed(1)} W` : '-' }}</strong>
+                </div>
+                <div>
+                  <span>Processes</span>
+                  <strong>{{ gpu.processes?.length ?? 0 }}</strong>
+                </div>
+              </div>
+              <div v-if="gpu.processes?.length" class="gpu-process-list">
+                <article
+                  v-for="(process, index) in gpu.processes"
+                  :key="`${gpu.gpuIndex}-${process.pid ?? process.processName ?? index}`"
+                  class="gpu-process-row"
+                >
+                  <div>
+                    <strong>{{ process.username || '-' }}</strong>
+                    <p>{{ process.processName || '-' }}</p>
+                  </div>
+                  <span>{{ formatMb(process.usedMemoryMb) }}</span>
+                </article>
+              </div>
+              <p v-else class="empty-note compact">No GPU processes</p>
+            </article>
+          </div>
+          <p v-else class="empty-note">No GPU sample</p>
+        </section>
+      </template>
+    </aside>
   </main>
 </template>

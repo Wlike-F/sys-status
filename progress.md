@@ -13,3 +13,6 @@
 - Renamed documentation files to English slugs while keeping Chinese content and titles, so Markdown links are easier to use on GitHub and Windows.
 - Initialized Git repository and created first documentation commit: `b186a0c docs: 初始化项目需求和接口文档`.
 - Added `.gitattributes` to keep repository text line endings stable across Windows and GitHub.
+- Pushed initial `main` branch to `https://github.com/Wlike-F/sys-status.git` using local `http.sslBackend=openssl` after the global `schannel` TLS backend failed.
+- Checked Markdown files: docs use UTF-8, LF line endings, and normal multi-line content.
+- Added `docs/README.md` and `.editorconfig` to make document browsing and editor encoding behavior clearer.

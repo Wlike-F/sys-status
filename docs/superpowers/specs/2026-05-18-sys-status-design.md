@@ -54,6 +54,7 @@ Agent 方案优先于 SSH/WinRM 远程轮询，因为它不要求后端保存服
 
 ## 文档索引
 
+- 文档目录：`docs/README.md`
 - 需求分析：`docs/01-requirements.md`
 - 总体架构：`docs/02-architecture.md`
 - Agent 设计：`docs/03-agent-design.md`

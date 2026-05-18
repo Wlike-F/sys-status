@@ -12,7 +12,7 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | 3. Propose approaches | complete | Documented remote polling, Agent, and hybrid options; recommended Agent. |
 | 4. Present design for approval | complete | User asked to完善文档 after accepting lightweight Agent direction. |
 | 5. Write project docs | complete | Created Chinese requirements, architecture, Agent, API, development prep, database, and GitHub docs. |
-| 6. Initialize Git/GitHub workflow | in_progress | Local Git repo initialized and first docs commit created; GitHub remote still needs user-provided repo URL. |
+| 6. Initialize Git/GitHub workflow | in_progress | Local Git repo initialized and pushed to GitHub; adding docs index and encoding/editor safeguards. |
 
 ## Decisions
 
@@ -32,3 +32,4 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | `session-catchup.py` failed with `SyntaxError` on walrus operator | Ran planning-with-files catchup using system `python` | Logged issue. Current `python` is 3.7.0; use a newer runtime for future Python tooling if needed. |
 | `git status` failed: not a git repository | Checked Git state in workspace | Treat as new project directory; initialize later after agreed documentation scope. |
 | `rg` failed with Access denied | Tried placeholder scan using `rg` | Switched to PowerShell `Select-String`. |
+| GitHub push failed with `schannel` TLS handshake error | Ran `git push -u origin main` with global Git TLS backend | Set repository-local `http.sslBackend=openssl`, then push succeeded. |

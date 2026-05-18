@@ -22,6 +22,19 @@
 - [数据库设计草案](docs/06-database.md)
 - [GitHub 协作规范](docs/07-github-workflow.md)
 
+## 工程结构
+
+```text
+sys-status/
+  common/   Java 共享模块，放 DTO、枚举、签名工具等跨模块代码
+  server/   Spring Boot 后端，负责 API、服务器管理、Agent 注册和快照接收
+  agent/    轻量采集端，后续部署到 Linux / Windows 服务器本机
+  web/      Vue 3 前端，负责资源看板和服务器管理页面
+  docs/     中文项目文档
+```
+
+当前后端和 Agent 使用 Maven 多模块管理，前端使用独立 Vite 工作区管理。
+
 ## 推荐建设顺序
 
 1. 先完成后端基础工程、数据库表、服务器管理接口。

@@ -15,12 +15,12 @@ sys-status/
 
 ### 后端
 
-- JDK 21
+- JDK 17
 - Spring Boot 3.x
 - Maven
 - Spring Security
 - MyBatis-Plus 或 Spring Data JPA
-- MySQL 8.0
+- MySQL 5.7.35
 - Redis 可选
 
 ### 前端
@@ -37,7 +37,7 @@ sys-status/
 
 ### Agent
 
-- JDK 21
+- JDK 17
 - Java HTTP Client 或轻量 HTTP 库
 - OSHI 用于跨平台基础指标采集
 - `nvidia-smi` 用于 NVIDIA GPU 指标
@@ -48,7 +48,7 @@ sys-status/
 | 项目 | 建议 |
 |---|---|
 | 后端部署机器 | 选择一台稳定在线的局域网机器，固定 IP |
-| 数据库 | MVP 用 MySQL 8.0 即可 |
+| 数据库 | MVP 使用 MySQL 5.7.35；本地开发按免密登录配置 |
 | Agent 运行权限 | Windows P100 主机建议管理员权限运行 |
 | 端口 | 后端默认 `8080`，前端开发默认 `5173` |
 | 刷新频率 | 前端 5 秒刷新，Agent 5 秒采集 |
@@ -113,9 +113,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/sys_status?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: sys_status
-    password: change_me
+    url: jdbc:mysql://localhost:3306/sys_status?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: ""
 
 sys-status:
   agent:

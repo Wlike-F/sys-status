@@ -22,7 +22,7 @@
 │ 快照接收 / 查询 API  │
 └──────┬────────┬─────┘
        │        │
-       │        └────────── 数据库 MySQL 8 / PostgreSQL
+       │        └────────── 数据库 MySQL 5.7.35
        │
        │ Agent API
 ┌──────▼──────────────┐
@@ -63,11 +63,11 @@
 
 技术建议：
 
-- Java 21
+- Java 17
 - Spring Boot 3.x
 - Spring Security
 - MyBatis-Plus 或 Spring Data JPA
-- MySQL 8.0 作为 MVP 默认数据库
+- MySQL 5.7.35 作为 MVP 默认数据库
 - Redis 可选，用于缓存最新快照和在线状态
 
 核心职责：

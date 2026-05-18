@@ -16,3 +16,12 @@
 - Pushed initial `main` branch to `https://github.com/Wlike-F/sys-status.git` using local `http.sslBackend=openssl` after the global `schannel` TLS backend failed.
 - Checked Markdown files: docs use UTF-8, LF line endings, and normal multi-line content.
 - Added `docs/README.md` and `.editorconfig` to make document browsing and editor encoding behavior clearer.
+- Started implementation phase for the first two steps: update technical constraints and create project skeleton.
+- Verified local toolchain: Java 17.0.18, Maven 3.6.2, Node 24.13.0, npm 11.6.2.
+- Wrote implementation plan at `docs/superpowers/plans/2026-05-18-bootstrap-skeleton.md`.
+- Updated documentation constraints to Java 17, MySQL 5.7.35, and local passwordless MySQL login.
+- Created Maven multi-module skeleton: root `pom.xml`, `common`, `server`, and `agent`.
+- Created Vue 3 + Vite + TypeScript skeleton under `web`.
+- First `mvn test` failed because `maven-compiler-plugin 3.13.0` requires Maven 3.6.3 while this machine has Maven 3.6.2; changed compiler plugin to 3.11.0.
+- Verification passed after the Maven plugin adjustment: `mvn test` completed with all three Java modules successful.
+- Frontend verification passed: `npm install --prefix web` completed with 0 vulnerabilities, and `npm run build --prefix web` completed successfully.

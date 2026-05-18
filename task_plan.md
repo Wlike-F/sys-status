@@ -13,6 +13,8 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | 4. Present design for approval | complete | User asked to完善文档 after accepting lightweight Agent direction. |
 | 5. Write project docs | complete | Created Chinese requirements, architecture, Agent, API, development prep, database, and GitHub docs. |
 | 6. Initialize Git/GitHub workflow | in_progress | Local Git repo initialized and pushed to GitHub; adding docs index and encoding/editor safeguards. |
+| 7. Update technical constraints | complete | Updated docs and server config for Java 17, MySQL 5.7.35, and local passwordless database login. |
+| 8. Create project skeleton | complete | Created Maven multi-module Java skeleton and Vue skeleton; `mvn test` and `npm run build --prefix web` passed. |
 
 ## Decisions
 
@@ -23,7 +25,10 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | Documentation language: Chinese | requested | User explicitly requested Chinese documentation. |
 | Collection model: lightweight Agent | accepted | User agreed that a lightweight collector is acceptable. |
 | All lab members can view resource details | accepted | User wants everyone to see concrete server resource usage. |
-| Implementation before design approval | deferred | Current turn focuses on documentation and GitHub preparation. |
+| Java version: 17 | requested | User updated project runtime requirement. |
+| MySQL version: 5.7.35 | requested | User updated database version. |
+| Local MySQL passwordless login | requested | User configured database without password. |
+| Implementation scope for this turn | accepted | Only update constraints and create skeleton; do not implement business APIs yet. |
 
 ## Errors Encountered
 
@@ -33,3 +38,4 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | `git status` failed: not a git repository | Checked Git state in workspace | Treat as new project directory; initialize later after agreed documentation scope. |
 | `rg` failed with Access denied | Tried placeholder scan using `rg` | Switched to PowerShell `Select-String`. |
 | GitHub push failed with `schannel` TLS handshake error | Ran `git push -u origin main` with global Git TLS backend | Set repository-local `http.sslBackend=openssl`, then push succeeded. |
+| `mvn test` failed because `maven-compiler-plugin 3.13.0` requires Maven 3.6.3 | Ran initial Maven verification on local Maven 3.6.2 | Downgraded compiler plugin to 3.11.0 for local compatibility. |

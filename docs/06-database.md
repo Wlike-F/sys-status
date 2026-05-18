@@ -6,6 +6,7 @@
 - 最新状态查询要快。
 - 历史数据只保留短期，避免数据库快速膨胀。
 - GPU、进程等明细可先使用关系表，必要时对原始快照保留 JSON。
+- 当前目标数据库为 MySQL 5.7.35。MySQL 5.7 支持 JSON 类型，但 MVP 建议原始快照字段使用 `longtext` 存储 JSON 字符串，降低迁移和驱动兼容风险。
 
 ## 核心表
 
@@ -75,7 +76,7 @@
 | process_count | int | 进程数 |
 | gpu_count | int | GPU 数 |
 | avg_gpu_usage | decimal | 平均 GPU 使用率 |
-| raw_json | json/text | 原始快照，便于排错和兼容 |
+| raw_json | longtext | 原始快照 JSON 字符串，便于排错和兼容 MySQL 5.7 |
 
 ### user_session_snapshot
 
@@ -143,7 +144,7 @@
 |---|---|---|
 | server_id | bigint | 服务器 ID |
 | snapshot_id | bigint | 最新快照 ID |
-| summary_json | json/text | 看板摘要 |
+| summary_json | longtext | 看板摘要 JSON 字符串 |
 | updated_at | datetime | 更新时间 |
 
 MVP 可以先直接查询最新 `metric_snapshot`，等数据量上来后再优化。

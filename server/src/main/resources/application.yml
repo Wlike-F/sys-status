@@ -5,13 +5,19 @@ spring:
   application:
     name: sys-status-server
   datasource:
-    url: jdbc:mysql://localhost:3306/sys_status?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/sys-status?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: ""
     driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
 
 sys-status:
+  public-base-url: http://localhost:8080
   agent:
+    collect-interval-seconds: 5
+    heartbeat-interval-seconds: 5
     heartbeat-warn-seconds: 20
     heartbeat-offline-seconds: 60
     snapshot-retention-days: 7

@@ -25,3 +25,10 @@
 - First `mvn test` failed because `maven-compiler-plugin 3.13.0` requires Maven 3.6.3 while this machine has Maven 3.6.2; changed compiler plugin to 3.11.0.
 - Verification passed after the Maven plugin adjustment: `mvn test` completed with all three Java modules successful.
 - Frontend verification passed: `npm install --prefix web` completed with 0 vulnerabilities, and `npm run build --prefix web` completed successfully.
+- Started steps 3 and 4: backend basic APIs plus Agent registration/heartbeat/minimal snapshot loop.
+- Verified MySQL client and server version: 5.7.35; root passwordless login works.
+- Wrote implementation plan at `docs/superpowers/plans/2026-05-18-server-agent-loop.md`.
+- Created local MySQL database `sys-status`. The first attempt failed because PowerShell consumed MySQL backticks; retry with escaped backticks succeeded.
+- Added server management APIs and Agent register/heartbeat/minimal snapshot APIs with MockMvc integration tests.
+- Added Agent one-shot client that parses `--server-url`, `--server-id`, and `--token`, then registers, heartbeats, collects CPU/memory, and submits one snapshot.
+- Verified real local loop against MySQL `sys-status`: created server `local-loop-test`, Agent submitted one snapshot, and `/api/servers` returned `ONLINE` with CPU/memory values.

@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:sys_status_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      mode: always
+
+sys-status:
+  agent:
+    heartbeat-warn-seconds: 20
+    heartbeat-offline-seconds: 60
+    snapshot-retention-days: 7

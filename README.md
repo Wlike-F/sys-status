@@ -35,6 +35,37 @@ sys-status/
 
 当前后端和 Agent 使用 Maven 多模块管理，前端使用独立 Vite 工作区管理。
 
+## 本地运行
+
+创建数据库：
+
+```bash
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS \`sys-status\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+启动后端：
+
+```bash
+mvn install -DskipTests
+cd server
+mvn spring-boot:run
+```
+
+启动前端：
+
+```bash
+npm install --prefix web
+npm run dev --prefix web
+```
+
+Agent 一次性注册、心跳和快照上报：
+
+```bash
+mvn -f agent/pom.xml org.codehaus.mojo:exec-maven-plugin:3.1.0:java \
+  -Dexec.mainClass=com.sysstatus.agent.SysStatusAgentApplication \
+  "-Dexec.args=--server-url http://127.0.0.1:8080 --server-id 1 --token 页面生成的Token"
+```
+
 ## 推荐建设顺序
 
 1. 先完成后端基础工程、数据库表、服务器管理接口。

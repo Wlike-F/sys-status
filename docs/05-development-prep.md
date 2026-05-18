@@ -105,6 +105,8 @@ sys-status/
 
 ## 建议的本地配置文件
 
+本地数据库使用用户指定的库名 `sys-status`。由于库名包含连字符，手动执行 SQL 时需要写成反引号形式：`` `sys-status` ``。
+
 后端：
 
 ```yaml
@@ -113,7 +115,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/sys_status?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/sys-status?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: ""
 

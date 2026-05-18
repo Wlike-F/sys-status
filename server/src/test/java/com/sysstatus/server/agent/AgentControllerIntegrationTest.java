@@ -90,6 +90,24 @@ class AgentControllerIntegrationTest {
                                   "cpuUsage": 12.5,
                                   "memoryTotalMb": 262144,
                                   "memoryUsedMb": 65536,
+                                  "sessions": [
+                                    {
+                                      "username": "zhangsan",
+                                      "terminal": "pts/0",
+                                      "host": "10.0.0.8",
+                                      "loginTime": "2026-05-18T08:00:00"
+                                    }
+                                  ],
+                                  "processes": [
+                                    {
+                                      "pid": 12345,
+                                      "username": "zhangsan",
+                                      "processName": "python",
+                                      "commandLine": "python train.py",
+                                      "cpuUsage": 230.5,
+                                      "memoryMb": 18432
+                                    }
+                                  ],
                                   "gpus": [
                                     {
                                       "gpuIndex": 0,
@@ -135,5 +153,15 @@ class AgentControllerIntegrationTest {
                 .andExpect(jsonPath("$.data[0].gpuMemoryTotalMb").value(81920))
                 .andExpect(jsonPath("$.data[0].gpuMemoryUsedMb").value(33124))
                 .andExpect(jsonPath("$.data[0].gpuMemoryUsage").value(40.43));
+
+        mockMvc.perform(get("/api/servers/" + serverId + "/snapshot/latest"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.serverId").value(serverId))
+                .andExpect(jsonPath("$.data.agentSecret").doesNotExist())
+                .andExpect(jsonPath("$.data.sessions[0].username").value("zhangsan"))
+                .andExpect(jsonPath("$.data.processes[0].commandLine").value("python train.py"))
+                .andExpect(jsonPath("$.data.gpus[0].processes[0].username").value("zhangsan"))
+                .andExpect(jsonPath("$.data.gpus[0].processes[0].usedMemoryMb").value(16050));
     }
 }

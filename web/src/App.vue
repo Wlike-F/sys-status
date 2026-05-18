@@ -11,8 +11,8 @@ import {
   Server,
   Terminal,
 } from '@lucide/vue';
-import { createServer, listServers, regenerateRegisterToken } from './api';
-import type { CreateServerPayload, CreateServerResponse, OsType, ServerNode, ServerStatus } from './types';
+import { createServer, getLatestSnapshot, listServers, regenerateRegisterToken } from './api';
+import type { CreateServerPayload, CreateServerResponse, OsType, ServerNode, ServerStatus, SnapshotDetail } from './types';
 
 const servers = ref<ServerNode[]>([]);
 const loading = ref(false);
@@ -20,6 +20,9 @@ const saving = ref(false);
 const errorMessage = ref('');
 const lastInstall = ref<CreateServerResponse | null>(null);
 const copied = ref(false);
+const selectedServer = ref<ServerNode | null>(null);
+const snapshot = ref<SnapshotDetail | null>(null);
+const detailLoading = ref(false);
 
 const form = reactive<CreateServerPayload>({
   name: '',
@@ -85,6 +88,20 @@ async function refreshToken(serverId: number) {
   }
 }
 
+async function openDetails(server: ServerNode) {
+  selectedServer.value = server;
+  snapshot.value = null;
+  detailLoading.value = true;
+  errorMessage.value = '';
+  try {
+    snapshot.value = await getLatestSnapshot(server.id);
+  } catch (error) {
+    errorMessage.value = toErrorMessage(error);
+  } finally {
+    detailLoading.value = false;
+  }
+}
+
 async function copyCommand() {
   if (!lastInstall.value) {
     return;
@@ -140,6 +157,10 @@ function formatGpuMemory(server: ServerNode) {
     return '-';
   }
   return `${Math.round(server.gpuMemoryUsedMb / 1024)} / ${Math.round(server.gpuMemoryTotalMb / 1024)} GB`;
+}
+
+function formatMb(value?: number) {
+  return typeof value === 'number' ? `${Math.round(value)} MB` : '-';
 }
 
 function average(values: Array<number | undefined>) {
@@ -254,6 +275,10 @@ function toErrorMessage(error: unknown) {
             <RefreshCw :size="16" />
             <span>Token</span>
           </button>
+          <button class="ghost-button" type="button" title="&#26597;&#30475;&#36827;&#31243;&#26126;&#32454;" @click="openDetails(server)">
+            <Terminal :size="16" />
+            <span>Detail</span>
+          </button>
         </article>
       </section>
 
@@ -313,6 +338,37 @@ function toErrorMessage(error: unknown) {
             <span v-if="copied">&#24050;&#22797;&#21046;</span>
             <span v-else>&#22797;&#21046;&#21629;&#20196;</span>
           </button>
+        </section>
+
+        <section v-if="selectedServer" class="detail-panel">
+          <div class="install-title">
+            <Terminal :size="18" />
+            <strong>{{ selectedServer.name }} &#26126;&#32454;</strong>
+          </div>
+          <p v-if="detailLoading" class="muted-line">&#21152;&#36733;&#20013;</p>
+          <template v-else-if="snapshot">
+            <div class="detail-block">
+              <span>&#22312;&#32447;&#29992;&#25143;</span>
+              <strong>{{ snapshot.sessions?.length || 0 }}</strong>
+              <small v-for="session in snapshot.sessions?.slice(0, 4)" :key="`${session.username}-${session.terminal}`">
+                {{ session.username || '-' }} / {{ session.terminal || '-' }}
+              </small>
+            </div>
+            <div class="detail-block">
+              <span>&#36827;&#31243; Top</span>
+              <small v-for="process in snapshot.processes?.slice(0, 5)" :key="process.pid">
+                {{ process.username || '-' }} / {{ process.processName || '-' }} / {{ formatMb(process.memoryMb) }}
+              </small>
+            </div>
+            <div class="detail-block">
+              <span>GPU Processes</span>
+              <template v-for="gpu in snapshot.gpus" :key="gpu.uuid || gpu.gpuIndex">
+                <small v-for="process in gpu.processes" :key="`${gpu.gpuIndex}-${process.pid}`">
+                  GPU{{ gpu.gpuIndex }} / {{ process.username || '-' }} / {{ process.processName || '-' }} / {{ formatMb(process.usedMemoryMb) }}
+                </small>
+              </template>
+            </div>
+          </template>
         </section>
       </aside>
     </div>

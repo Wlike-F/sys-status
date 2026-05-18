@@ -205,7 +205,7 @@ label span {
 
 .server-row {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) 92px 104px 118px 118px 150px 92px;
+  grid-template-columns: minmax(240px, 1fr) 88px 96px 110px 110px 142px 84px 92px;
   gap: 12px;
   align-items: center;
   min-height: 92px;
@@ -337,6 +337,42 @@ textarea:focus {
   color: #f8fafc;
 }
 
+.detail-panel {
+  margin: 0 18px 18px;
+  padding: 14px;
+  border: 1px solid #cbd2da;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.detail-block {
+  padding: 11px 0;
+  border-top: 1px solid #e1e5ea;
+}
+
+.detail-block span,
+.muted-line {
+  display: block;
+  color: #5f6975;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.detail-block strong {
+  display: block;
+  margin: 5px 0;
+  font-size: 22px;
+}
+
+.detail-block small {
+  display: block;
+  margin-top: 5px;
+  color: #46515e;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .install-title {
   display: flex;
   align-items: center;
@@ -406,7 +442,7 @@ code {
   }
 
   .server-row {
-    grid-template-columns: 1fr 88px 98px 110px 110px 130px 88px;
+    grid-template-columns: 1fr 84px 92px 104px 104px 126px 80px 88px;
   }
 }
 

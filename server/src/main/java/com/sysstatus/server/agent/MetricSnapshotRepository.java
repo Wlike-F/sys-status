@@ -2,6 +2,8 @@ package com.sysstatus.server.agent;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -36,6 +38,17 @@ public class MetricSnapshotRepository {
                 request.memoryUsedMb(),
                 memoryUsage,
                 serializeRawPayload(request));
+    }
+
+    public Optional<String> findLatestRawJson(long serverId) {
+        List<String> rows = jdbcTemplate.query("""
+                SELECT raw_json
+                FROM metric_snapshot
+                WHERE server_id = ?
+                ORDER BY collected_at DESC, id DESC
+                LIMIT 1
+                """, (rs, rowNum) -> rs.getString("raw_json"), serverId);
+        return rows.stream().findFirst();
     }
 
     private String serializeRawPayload(AgentSnapshotRequest request) {

@@ -34,7 +34,7 @@ class NvidiaSmiGpuCollectorTest {
             throw new IllegalArgumentException("Unexpected command: " + joined);
         };
 
-        List<GpuMetric> gpus = new NvidiaSmiGpuCollector(runner).collect();
+        List<GpuMetric> gpus = new NvidiaSmiGpuCollector(runner, false).collect();
 
         assertEquals(2, gpus.size());
         GpuMetric first = gpus.get(0);
@@ -49,5 +49,37 @@ class NvidiaSmiGpuCollectorTest {
         assertEquals("zhangsan", first.processes().get(0).username());
         assertEquals("python", first.processes().get(0).processName());
         assertEquals(16050, first.processes().get(0).usedMemoryMb());
+    }
+
+    @Test
+    void parsesWindowsP100GpuAndLooksUpProcessOwnerWithPowerShell() {
+        CommandRunner runner = command -> {
+            String joined = String.join(" ", command);
+            if (joined.contains("--query-gpu")) {
+                return """
+                        0, Tesla P100-PCIE-16GB, GPU-p100-0, 73, 16384, 12000, 55, 185.50
+                        1, Tesla P100-PCIE-16GB, GPU-p100-1, 4, 16384, 512, 32, 48.00
+                        """;
+            }
+            if (joined.contains("--query-compute-apps")) {
+                return "GPU-p100-0, 3456, python.exe, 12000";
+            }
+            if (joined.contains("powershell") && joined.contains("ProcessId=3456")) {
+                return "wff";
+            }
+            throw new IllegalArgumentException("Unexpected command: " + joined);
+        };
+
+        List<GpuMetric> gpus = new NvidiaSmiGpuCollector(runner, true).collect();
+
+        assertEquals(2, gpus.size());
+        GpuMetric first = gpus.get(0);
+        assertEquals("Tesla P100-PCIE-16GB", first.name());
+        assertEquals(73.0, first.utilizationPercent());
+        assertEquals(16384, first.memoryTotalMb());
+        assertEquals(12000, first.memoryUsedMb());
+        assertEquals(3456, first.processes().get(0).pid());
+        assertEquals("wff", first.processes().get(0).username());
+        assertEquals("python.exe", first.processes().get(0).processName());
     }
 }

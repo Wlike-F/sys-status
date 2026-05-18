@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sysstatus.server.shared.ApiResponse;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.Valid;
 
 @Validated
@@ -37,6 +38,11 @@ public class ServerNodeController {
     @GetMapping("/{id}")
     public ApiResponse<ServerNodeDto> get(@PathVariable("id") long id) {
         return ApiResponse.ok(service.get(id));
+    }
+
+    @GetMapping("/{id}/snapshot/latest")
+    public ApiResponse<JsonNode> latestSnapshot(@PathVariable("id") long id) {
+        return ApiResponse.ok(service.latestSnapshot(id));
     }
 
     @PostMapping("/{id}/register-token")

@@ -1,6 +1,10 @@
 package com.sysstatus.agent;
 
 import java.net.InetAddress;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 
 import com.sysstatus.agent.client.AgentApiClient;
@@ -12,10 +16,14 @@ import com.sysstatus.common.agent.AgentRegisterRequest;
 import com.sysstatus.common.agent.AgentRegisterResponse;
 import com.sysstatus.common.agent.AgentSnapshotRequest;
 import com.sysstatus.common.agent.GpuMetric;
+import com.sysstatus.common.agent.ProcessMetric;
+import com.sysstatus.common.agent.SessionMetric;
 
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.GlobalMemory;
+import oshi.software.os.OSProcess;
+import oshi.software.os.OperatingSystem;
 
 public class SysStatusAgentApplication {
     private static final String AGENT_VERSION = "0.1.0";
@@ -54,9 +62,11 @@ public class SysStatusAgentApplication {
                 AGENT_VERSION
         ));
         SnapshotMetrics metrics = collectMetrics();
-        List<GpuMetric> gpus = "LINUX".equals(osType)
-                ? new NvidiaSmiGpuCollector(new ProcessCommandRunner(5)).collect()
-                : List.of();
+        SystemInfo systemInfo = new SystemInfo();
+        List<GpuMetric> gpus = new NvidiaSmiGpuCollector(
+                new ProcessCommandRunner(5),
+                "WINDOWS".equals(osType)
+        ).collect();
         client.snapshot(new AgentSnapshotRequest(
                 config.serverId(),
                 registerResponse.agentId(),
@@ -66,6 +76,8 @@ public class SysStatusAgentApplication {
                 metrics.cpuUsage(),
                 metrics.memoryTotalMb(),
                 metrics.memoryUsedMb(),
+                collectSessions(systemInfo),
+                collectProcesses(systemInfo),
                 gpus
         ));
     }
@@ -78,6 +90,38 @@ public class SysStatusAgentApplication {
         long totalMb = memory.getTotal() / 1024 / 1024;
         long usedMb = (memory.getTotal() - memory.getAvailable()) / 1024 / 1024;
         return new SnapshotMetrics(round(cpuUsage), totalMb, usedMb);
+    }
+
+    private static List<SessionMetric> collectSessions(SystemInfo systemInfo) {
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        return systemInfo.getOperatingSystem().getSessions().stream()
+                .map(session -> new SessionMetric(
+                        session.getUserName(),
+                        session.getTerminalDevice(),
+                        session.getHost(),
+                        Instant.ofEpochMilli(session.getLoginTime())
+                                .atZone(ZoneId.systemDefault())
+                                .format(formatter)
+                ))
+                .toList();
+    }
+
+    private static List<ProcessMetric> collectProcesses(SystemInfo systemInfo) {
+        OperatingSystem os = systemInfo.getOperatingSystem();
+        return os.getProcesses(
+                        process -> process.getResidentSetSize() > 0,
+                        Comparator.comparingDouble(OSProcess::getProcessCpuLoadCumulative).reversed(),
+                        80
+                ).stream()
+                .map(process -> new ProcessMetric(
+                        (long) process.getProcessID(),
+                        process.getUser(),
+                        process.getName(),
+                        process.getCommandLine(),
+                        round(process.getProcessCpuLoadCumulative() * 100.0),
+                        process.getResidentSetSize() / 1024 / 1024
+                ))
+                .toList();
     }
 
     private static double round(double value) {

@@ -13,4 +13,11 @@
     <artifactId>sys-status-common</artifactId>
     <name>sys-status-common</name>
     <description>Shared models and utilities for sys-status modules</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+    </dependencies>
 </project>

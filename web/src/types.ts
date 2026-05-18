@@ -41,6 +41,53 @@ export interface CreateServerResponse {
   installCommand: string;
 }
 
+export interface SessionMetric {
+  username?: string;
+  terminal?: string;
+  host?: string;
+  loginTime?: string;
+}
+
+export interface ProcessMetric {
+  pid?: number;
+  username?: string;
+  processName?: string;
+  commandLine?: string;
+  cpuUsage?: number;
+  memoryMb?: number;
+}
+
+export interface GpuProcessMetric {
+  pid?: number;
+  username?: string;
+  processName?: string;
+  usedMemoryMb?: number;
+}
+
+export interface GpuMetric {
+  gpuIndex?: number;
+  name?: string;
+  uuid?: string;
+  utilizationPercent?: number;
+  memoryTotalMb?: number;
+  memoryUsedMb?: number;
+  temperatureCelsius?: number;
+  powerWatt?: number;
+  processes?: GpuProcessMetric[];
+}
+
+export interface SnapshotDetail {
+  serverId: number;
+  hostname?: string;
+  osType?: OsType;
+  cpuUsage?: number;
+  memoryTotalMb?: number;
+  memoryUsedMb?: number;
+  sessions?: SessionMetric[];
+  processes?: ProcessMetric[];
+  gpus?: GpuMetric[];
+}
+
 export interface ApiResponse<T> {
   code: number;
   message: string;

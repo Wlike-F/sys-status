@@ -22,9 +22,15 @@ public class NvidiaSmiGpuCollector {
     );
 
     private final CommandRunner commandRunner;
+    private final boolean windows;
 
     public NvidiaSmiGpuCollector(CommandRunner commandRunner) {
+        this(commandRunner, false);
+    }
+
+    public NvidiaSmiGpuCollector(CommandRunner commandRunner, boolean windows) {
         this.commandRunner = commandRunner;
+        this.windows = windows;
     }
 
     public List<GpuMetric> collect() {
@@ -86,10 +92,26 @@ public class NvidiaSmiGpuCollector {
             return null;
         }
         try {
-            return commandRunner.run(List.of("sh", "-c", "ps -o user= -p " + pid)).trim();
+            if (windows) {
+                String script = "(Get-CimInstance Win32_Process -Filter \"ProcessId=%d\" | ForEach-Object { $_.GetOwner().User })"
+                        .formatted(pid);
+                return blankToNull(commandRunner.run(List.of(
+                        "powershell",
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "Bypass",
+                        "-Command",
+                        script
+                )).trim());
+            }
+            return blankToNull(commandRunner.run(List.of("sh", "-c", "ps -o user= -p " + pid)).trim());
         } catch (IOException | InterruptedException | RuntimeException error) {
             return null;
         }
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     private static List<String> lines(String output) {

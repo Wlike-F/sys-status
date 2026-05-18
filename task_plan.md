@@ -17,6 +17,7 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | 8. Create project skeleton | complete | Created Maven multi-module Java skeleton and Vue skeleton; `mvn test` and `npm run build --prefix web` passed. |
 | 9. Backend basic APIs | complete | Implemented server management APIs, schema initialization, and integration tests. |
 | 10. Agent communication loop | complete | Implemented Agent register, heartbeat, minimal CPU/memory snapshot loop, and verified against local MySQL. |
+| 11. Frontend minimal dashboard | complete | Implemented Vue dashboard for server overview, manual server registration, token regeneration, and Agent install command copy flow; frontend tests/build/audit passed. |
 
 ## Decisions
 
@@ -31,7 +32,7 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | MySQL version: 5.7.35 | requested | User updated database version. |
 | Local MySQL passwordless login | verified | MySQL 5.7.35 root login without password works locally. |
 | Database name: `sys-status` | requested | User explicitly asked to create this database; SQL must quote it because of the hyphen. |
-| Implementation scope for this turn | accepted | Only update constraints and create skeleton; do not implement business APIs yet. |
+| Frontend direction | accepted | Build the usable monitoring console first, with an operations-focused dashboard instead of a landing page. |
 
 ## Errors Encountered
 
@@ -45,3 +46,5 @@ Design a Spring Boot + Vue web tool for monitoring three shared lab servers, inc
 | MySQL database creation failed because PowerShell consumed backticks around `sys-status` | Ran `mysql -u root -e 'CREATE DATABASE ... `sys-status` ...'` | Re-ran with escaped PowerShell backticks: ````sys-status````. |
 | `mvn spring-boot:run` from root failed to find main class | Started Spring Boot plugin from parent POM | Installed multi-module artifacts and ran Spring Boot from `server/` module. |
 | `mvn -f agent/pom.xml exec:java -Dexec.args=...` was misparsed on PowerShell | Tried to run Agent with URL-containing args directly in PowerShell | Ran the Maven exec command through `cmd.exe /c` with quoted `-Dexec.args`. |
+| `lucide-vue-next` was deprecated and `@lucide/vue@0.468.0` did not exist | Added icons for dashboard UI | Switched to `@lucide/vue@1.16.0`. |
+| Frontend audit reported moderate vulnerabilities through Vitest's nested Vite/esbuild chain | Ran `npm audit --prefix web --audit-level=moderate` | Upgraded Vitest to `^4.1.6`; audit then reported 0 vulnerabilities. |

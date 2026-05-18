@@ -32,3 +32,8 @@
 - Added server management APIs and Agent register/heartbeat/minimal snapshot APIs with MockMvc integration tests.
 - Added Agent one-shot client that parses `--server-url`, `--server-id`, and `--token`, then registers, heartbeats, collects CPU/memory, and submits one snapshot.
 - Verified real local loop against MySQL `sys-status`: created server `local-loop-test`, Agent submitted one snapshot, and `/api/servers` returned `ONLINE` with CPU/memory values.
+- Started step 5 frontend work: added typed API client, shared frontend types, and Vitest coverage for API response/error handling.
+- Implemented the Vue server dashboard UI: top-level resource summary, server list, manual server add form, token regeneration, and Agent install command copy panel.
+- Reworked dashboard copy to avoid Windows encoding issues in source files while still rendering Chinese text in the browser.
+- Upgraded Vitest to `^4.1.6` after audit identified moderate vulnerabilities in the old nested Vite/esbuild chain; `npm audit --prefix web --audit-level=moderate` now reports 0 vulnerabilities.
+- Frontend verification passed: `npm run test --prefix web` passed 1 test file / 2 tests, `npm run build --prefix web` completed successfully, Vite returned HTTP 200, and `/api/servers` returned the online local loop server.

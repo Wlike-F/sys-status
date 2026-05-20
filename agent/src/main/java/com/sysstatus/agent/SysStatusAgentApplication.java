@@ -9,8 +9,11 @@ import java.util.List;
 
 import com.sysstatus.agent.client.AgentApiClient;
 import com.sysstatus.agent.config.AgentConfig;
+import com.sysstatus.agent.collector.CommandRunner;
+import com.sysstatus.agent.collector.LinuxCommandMetricCollector;
 import com.sysstatus.agent.collector.NvidiaSmiGpuCollector;
 import com.sysstatus.agent.collector.ProcessCommandRunner;
+import com.sysstatus.agent.collector.WindowsProcessMetricCollector;
 import com.sysstatus.common.agent.AgentHeartbeatRequest;
 import com.sysstatus.common.agent.AgentRegisterRequest;
 import com.sysstatus.common.agent.AgentRegisterResponse;
@@ -63,8 +66,11 @@ public class SysStatusAgentApplication {
         ));
         SnapshotMetrics metrics = collectMetrics();
         SystemInfo systemInfo = new SystemInfo();
+        CommandRunner commandRunner = new ProcessCommandRunner(5);
+        LinuxCommandMetricCollector linuxCollector = new LinuxCommandMetricCollector(commandRunner);
+        WindowsProcessMetricCollector windowsCollector = new WindowsProcessMetricCollector(commandRunner, new com.fasterxml.jackson.databind.ObjectMapper());
         List<GpuMetric> gpus = new NvidiaSmiGpuCollector(
-                new ProcessCommandRunner(5),
+                commandRunner,
                 "WINDOWS".equals(osType)
         ).collect();
         client.snapshot(new AgentSnapshotRequest(
@@ -76,8 +82,8 @@ public class SysStatusAgentApplication {
                 metrics.cpuUsage(),
                 metrics.memoryTotalMb(),
                 metrics.memoryUsedMb(),
-                collectSessions(systemInfo),
-                collectProcesses(systemInfo),
+                collectSessions(systemInfo, osType, linuxCollector),
+                collectProcesses(systemInfo, osType, linuxCollector, windowsCollector),
                 gpus
         ));
     }
@@ -92,7 +98,14 @@ public class SysStatusAgentApplication {
         return new SnapshotMetrics(round(cpuUsage), totalMb, usedMb);
     }
 
-    private static List<SessionMetric> collectSessions(SystemInfo systemInfo) {
+    private static List<SessionMetric> collectSessions(SystemInfo systemInfo, String osType,
+                                                       LinuxCommandMetricCollector linuxCollector) {
+        if ("LINUX".equals(osType)) {
+            List<SessionMetric> sessions = linuxCollector.collectSessions();
+            if (!sessions.isEmpty()) {
+                return sessions;
+            }
+        }
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
         return systemInfo.getOperatingSystem().getSessions().stream()
                 .map(session -> new SessionMetric(
@@ -106,7 +119,21 @@ public class SysStatusAgentApplication {
                 .toList();
     }
 
-    private static List<ProcessMetric> collectProcesses(SystemInfo systemInfo) {
+    private static List<ProcessMetric> collectProcesses(SystemInfo systemInfo, String osType,
+                                                       LinuxCommandMetricCollector linuxCollector,
+                                                       WindowsProcessMetricCollector windowsCollector) {
+        if ("WINDOWS".equals(osType)) {
+            List<ProcessMetric> processes = windowsCollector.collectProcesses();
+            if (!processes.isEmpty()) {
+                return processes;
+            }
+        }
+        if ("LINUX".equals(osType)) {
+            List<ProcessMetric> processes = linuxCollector.collectProcesses();
+            if (!processes.isEmpty()) {
+                return processes;
+            }
+        }
         OperatingSystem os = systemInfo.getOperatingSystem();
         return os.getProcesses(
                         process -> process.getResidentSetSize() > 0,

@@ -153,8 +153,8 @@ label span {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 16px;
 }
 
 .server-panel,
@@ -168,10 +168,13 @@ label span {
 
 .server-panel {
   padding: 18px;
+  overflow: hidden;
 }
 
 .side-panel {
   align-self: start;
+  position: sticky;
+  top: 18px;
   overflow: hidden;
 }
 
@@ -205,11 +208,11 @@ label span {
 
 .server-row {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) 88px 96px 110px 110px 142px 84px 92px;
-  gap: 12px;
-  align-items: center;
-  min-height: 92px;
-  padding: 14px 0;
+  grid-template-columns: minmax(230px, 0.9fr) minmax(0, 1.4fr) 160px;
+  gap: 16px;
+  align-items: start;
+  min-height: 104px;
+  padding: 16px 0;
   border-top: 1px solid #e1e5ea;
 }
 
@@ -223,11 +226,15 @@ label span {
 .server-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .server-title strong {
   font-size: 17px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .server-title span {
@@ -244,6 +251,19 @@ label span {
   color: #5f6975;
   font-size: 13px;
   overflow-wrap: anywhere;
+}
+
+.server-main small {
+  display: block;
+  margin-top: 4px;
+  color: #7c8794;
+  font-size: 12px;
+}
+
+.server-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .status-dot {
@@ -274,12 +294,16 @@ label span {
 
 .resource-cell {
   min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #e2e7ee;
+  border-radius: 8px;
+  background: rgba(244, 247, 250, 0.86);
 }
 
 .resource-cell strong {
   display: block;
   margin-top: 6px;
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .resource-cell small {
@@ -291,7 +315,31 @@ label span {
 }
 
 .wide {
-  min-width: 130px;
+  min-width: 0;
+  grid-column: span 1;
+}
+
+.server-actions {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.ghost-button {
+  width: 100%;
+  min-width: 0;
+  padding: 0 10px;
+  justify-content: flex-start;
+  background: #fff;
+}
+
+.ghost-button.strong {
+  border-color: #1b6d62;
+  color: #1b6d62;
+}
+
+.ghost-button.strong:hover {
+  background: rgba(27, 109, 98, 0.08);
 }
 
 label {
@@ -603,8 +651,8 @@ code {
 .session-row,
 .process-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 130px;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 12px;
   padding: 10px 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
@@ -725,22 +773,37 @@ code {
 }
 
 .empty-note {
-  padding: 10px 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
   color: #9eb1bf;
   font-size: 13px;
+  line-height: 1.55;
 }
 
 .empty-note.compact {
-  padding: 2px 0 0;
+  padding: 8px 0 0;
+  border: 0;
+  background: transparent;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1250px) {
   .workspace {
     grid-template-columns: 1fr;
   }
 
   .server-row {
-    grid-template-columns: 1fr 84px 92px 104px 104px 126px 80px 88px;
+    grid-template-columns: minmax(220px, 1fr);
+  }
+
+  .server-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .server-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -761,6 +824,12 @@ code {
   .server-row {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .server-metrics,
+  .server-actions,
+  .detail-summary-grid {
+    grid-template-columns: 1fr;
   }
 
   .ghost-button {

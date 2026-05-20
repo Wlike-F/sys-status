@@ -68,27 +68,27 @@ const detailCards = computed(() => {
   const snapshot = detailSnapshot.value;
   return [
     {
-      label: 'Online users',
+      label: '在线用户',
       value: snapshot?.onlineUserCount ?? 0,
-      hint: `${snapshot?.sessions?.length ?? 0} sessions`,
+      hint: `会话 ${snapshot?.sessions?.length ?? 0}`,
     },
     {
-      label: 'CPU usage',
+      label: 'CPU 使用率',
       value: formatPercent(snapshot?.cpuUsage),
-      hint: server?.status === 'ONLINE' ? 'Latest sample' : statusLabel(server?.status ?? 'PENDING'),
+      hint: server?.status === 'ONLINE' ? '最新采样' : statusLabel(server?.status ?? 'PENDING'),
     },
     {
-      label: 'GPU usage',
+      label: 'GPU 使用率',
       value: formatPercent(server?.gpuUsage),
-      hint: `${server?.gpuCount ?? snapshot?.gpus?.length ?? 0} cards`,
+      hint: `${server?.gpuCount ?? snapshot?.gpus?.length ?? 0} 张卡`,
     },
     {
-      label: 'Memory usage',
+      label: '内存使用率',
       value: formatPercent(snapshot?.memoryUsage ?? server?.memoryUsage),
       hint: formatMemoryPair(snapshot?.memoryUsedMb, snapshot?.memoryTotalMb),
     },
     {
-      label: 'GPU memory',
+      label: '显存使用率',
       value: formatPercent(server?.gpuMemoryUsage),
       hint: formatGpuMemoryPair(server?.gpuMemoryUsedMb, server?.gpuMemoryTotalMb),
     },
@@ -198,11 +198,11 @@ function resetForm() {
 
 function statusLabel(status: ServerStatus) {
   const labels: Record<ServerStatus, string> = {
-    PENDING: 'Pending',
-    ONLINE: 'Online',
-    WARN: 'Lagging',
-    OFFLINE: 'Offline',
-    DISABLED: 'Disabled',
+    PENDING: '待接入',
+    ONLINE: '在线',
+    WARN: '延迟',
+    OFFLINE: '离线',
+    DISABLED: '禁用',
   };
   return labels[status] ?? status;
 }
@@ -269,6 +269,22 @@ function formatTimestamp(value?: string) {
   }).format(date);
 }
 
+function formatShortTimestamp(value?: string) {
+  if (!value) {
+    return '尚未上报';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
 function average(values: Array<number | undefined>) {
   const present = values.filter((value): value is number => typeof value === 'number');
   if (present.length === 0) {
@@ -287,38 +303,38 @@ function toErrorMessage(error: unknown) {
     <header class="topbar">
       <div>
         <p class="eyebrow">Lab Resource Console</p>
-        <h1>Server resource dashboard</h1>
+        <h1>实验室服务器资源看板</h1>
       </div>
-      <button class="icon-button" type="button" :disabled="loading" title="Refresh server list" @click="loadServers">
+      <button class="icon-button" type="button" :disabled="loading" title="刷新服务器列表" @click="loadServers">
         <RefreshCw :size="18" :class="{ spinning: loading }" />
-        <span>Refresh</span>
+        <span>刷新</span>
       </button>
     </header>
 
     <section class="metrics-strip" aria-label="Resource summary">
       <div class="metric-tile">
         <Server :size="19" />
-        <span>Servers</span>
+        <span>在线 / 总数</span>
         <strong>{{ totals.online }} / {{ totals.total }}</strong>
       </div>
       <div class="metric-tile">
         <Terminal :size="19" />
-        <span>Pending</span>
+        <span>待接入</span>
         <strong>{{ totals.pending }}</strong>
       </div>
       <div class="metric-tile">
         <Cpu :size="19" />
-        <span>Avg CPU</span>
+        <span>平均 CPU</span>
         <strong>{{ formatPercent(totals.avgCpu) }}</strong>
       </div>
       <div class="metric-tile">
         <Activity :size="19" />
-        <span>Avg GPU</span>
+        <span>平均 GPU</span>
         <strong>{{ formatPercent(totals.avgGpu) }}</strong>
       </div>
       <div class="metric-tile">
         <Database :size="19" />
-        <span>Avg Memory</span>
+        <span>平均内存</span>
         <strong>{{ formatPercent(totals.avgMemory) }}</strong>
       </div>
     </section>
@@ -330,15 +346,15 @@ function toErrorMessage(error: unknown) {
         <div class="panel-heading">
           <div>
             <p class="section-kicker">Servers</p>
-            <h2>Server list</h2>
+            <h2>服务器列表</h2>
           </div>
-          <span class="count-chip">{{ servers.length }} nodes</span>
+          <span class="count-chip">{{ servers.length }} 台</span>
         </div>
 
         <div v-if="servers.length === 0" class="empty-state">
           <MonitorCog :size="34" />
-          <strong>No servers yet</strong>
-          <span>Add a lab server and this view will show Agent status and resource usage.</span>
+          <strong>暂无服务器</strong>
+          <span>添加节点后会显示 Agent 状态与资源采样。</span>
         </div>
 
         <article v-for="server in servers" :key="server.id" class="server-row">
@@ -349,42 +365,48 @@ function toErrorMessage(error: unknown) {
                 <strong>{{ server.name }}</strong>
                 <span>{{ osLabel(server.osType) }}</span>
               </div>
-              <p>{{ server.host }} / {{ server.gpuType || 'GPU not set' }}</p>
+              <p>{{ server.host }} / {{ server.gpuType || '未配置 GPU' }}</p>
+              <small>最近上报 {{ formatShortTimestamp(server.lastHeartbeatAt) }}</small>
             </div>
           </div>
 
-          <div class="resource-cell">
-            <span>CPU</span>
-            <strong>{{ formatPercent(server.cpuUsage) }}</strong>
+          <div class="server-metrics">
+            <div class="resource-cell">
+              <span>CPU</span>
+              <strong>{{ formatPercent(server.cpuUsage) }}</strong>
+            </div>
+            <div class="resource-cell">
+              <span>内存</span>
+              <strong>{{ formatPercent(server.memoryUsage) }}</strong>
+              <small>{{ formatMemory(server) }}</small>
+            </div>
+            <div class="resource-cell">
+              <span>GPU</span>
+              <strong>{{ formatPercent(server.gpuUsage) }}</strong>
+              <small>{{ server.gpuCount ? `${server.gpuCount} cards` : '-' }}</small>
+            </div>
+            <div class="resource-cell">
+              <span>显存</span>
+              <strong>{{ formatPercent(server.gpuMemoryUsage) }}</strong>
+              <small>{{ formatGpuMemory(server) }}</small>
+            </div>
+            <div class="resource-cell wide">
+              <span>Agent</span>
+              <strong>{{ statusLabel(server.status) }}</strong>
+              <small>{{ server.agentVersion || '等待上报' }}</small>
+            </div>
           </div>
-          <div class="resource-cell">
-            <span>GPU</span>
-            <strong>{{ formatPercent(server.gpuUsage) }}</strong>
-            <small>{{ server.gpuCount ? `${server.gpuCount} cards` : '-' }}</small>
+
+          <div class="server-actions">
+            <button class="ghost-button" type="button" title="重新生成接入命令" @click="refreshToken(server.id)">
+              <RefreshCw :size="16" />
+              <span>Token</span>
+            </button>
+            <button class="ghost-button strong" type="button" title="查看明细" @click="openDetails(server)">
+              <Terminal :size="16" />
+              <span>明细</span>
+            </button>
           </div>
-          <div class="resource-cell">
-            <span>Memory</span>
-            <strong>{{ formatPercent(server.memoryUsage) }}</strong>
-            <small>{{ formatMemory(server) }}</small>
-          </div>
-          <div class="resource-cell">
-            <span>GPU MEM</span>
-            <strong>{{ formatPercent(server.gpuMemoryUsage) }}</strong>
-            <small>{{ formatGpuMemory(server) }}</small>
-          </div>
-          <div class="resource-cell wide">
-            <span>Agent</span>
-            <strong>{{ statusLabel(server.status) }}</strong>
-            <small>{{ server.agentVersion || server.lastHeartbeatAt || 'Waiting' }}</small>
-          </div>
-          <button class="ghost-button" type="button" title="Regenerate install command" @click="refreshToken(server.id)">
-            <RefreshCw :size="16" />
-            <span>Token</span>
-          </button>
-          <button class="ghost-button" type="button" title="Open details" @click="openDetails(server)">
-            <Terminal :size="16" />
-            <span>Detail</span>
-          </button>
         </article>
       </section>
 
@@ -393,13 +415,13 @@ function toErrorMessage(error: unknown) {
           <div class="panel-heading compact">
             <div>
               <p class="section-kicker">Register</p>
-              <h2>Add server</h2>
+              <h2>添加服务器</h2>
             </div>
             <Plus :size="20" />
           </div>
 
           <label>
-            <span>Name</span>
+            <span>名称</span>
             <input v-model.trim="form.name" required placeholder="A100-Server" />
           </label>
           <label>
@@ -418,31 +440,31 @@ function toErrorMessage(error: unknown) {
             <input v-model.trim="form.gpuType" placeholder="8 x NVIDIA A100" />
           </label>
           <label>
-            <span>Location</span>
+            <span>位置</span>
             <input v-model.trim="form.location" placeholder="Lab rack" />
           </label>
           <label>
-            <span>Notes</span>
+            <span>备注</span>
             <textarea v-model.trim="form.description" rows="3" placeholder="Training node / CPU host" />
           </label>
 
           <button class="primary-button" type="submit" :disabled="saving">
             <Plus :size="17" />
-            <span v-if="saving">Adding</span>
-            <span v-else>Add server</span>
+            <span v-if="saving">添加中</span>
+            <span v-else>添加服务器</span>
           </button>
         </form>
 
         <section v-if="lastInstall" class="install-panel">
           <div class="install-title">
             <Activity :size="18" />
-            <strong>Agent install command</strong>
+            <strong>Agent 接入命令</strong>
           </div>
           <code>{{ lastInstall.installCommand }}</code>
-          <button class="copy-button" type="button" title="Copy install command" @click="copyCommand">
+          <button class="copy-button" type="button" title="复制接入命令" @click="copyCommand">
             <Copy :size="16" />
-            <span v-if="copied">Copied</span>
-            <span v-else>Copy command</span>
+            <span v-if="copied">已复制</span>
+            <span v-else>复制命令</span>
           </button>
         </section>
       </aside>
@@ -452,14 +474,14 @@ function toErrorMessage(error: unknown) {
     <aside v-if="detailOpen" class="detail-drawer" aria-label="Server detail">
       <header class="detail-header">
         <div>
-          <p class="eyebrow detail-eyebrow">Server Detail</p>
+          <p class="eyebrow detail-eyebrow">服务器明细</p>
           <h2>{{ detailServer?.name || selectedServer?.name }}</h2>
           <p class="detail-subtitle">
             {{ detailServer?.host || '-' }} / {{ osLabel(detailServer?.osType) }} /
-            {{ detailServer?.gpuType || 'GPU not set' }}
+            {{ detailServer?.gpuType || '未配置 GPU' }}
           </p>
         </div>
-        <button class="drawer-close" type="button" title="Close detail" @click="closeDetails">
+        <button class="drawer-close" type="button" title="关闭明细" @click="closeDetails">
           <X :size="18" />
         </button>
       </header>
@@ -468,8 +490,8 @@ function toErrorMessage(error: unknown) {
         <span class="status-pill" :class="statusClass(detailServer?.status)">
           {{ statusLabel(detailServer?.status ?? 'PENDING') }}
         </span>
-        <span>Host {{ detailSnapshot?.hostname || detailServer?.hostname || 'Unknown' }}</span>
-        <span>Captured {{ formatTimestamp(detailSnapshot?.collectedAt) }}</span>
+        <span>主机 {{ detailSnapshot?.hostname || detailServer?.hostname || '未知' }}</span>
+        <span>采样 {{ formatTimestamp(detailSnapshot?.collectedAt) }}</span>
       </div>
 
       <div class="detail-summary-grid">
@@ -482,14 +504,14 @@ function toErrorMessage(error: unknown) {
 
       <div v-if="detailLoading" class="detail-loading">
         <RefreshCw :size="18" class="spinning" />
-        <span>Loading detail</span>
+        <span>加载明细</span>
       </div>
       <p v-else-if="detailError" class="detail-error">{{ detailError }}</p>
       <template v-else-if="detailSnapshot">
         <section class="detail-section">
           <div class="section-head">
             <Users :size="16" />
-            <strong>Online users</strong>
+            <strong>在线用户</strong>
             <span>{{ detailSnapshot.onlineUserCount ?? 0 }}</span>
           </div>
           <div v-if="detailSnapshot.sessions?.length" class="session-list">
@@ -505,13 +527,13 @@ function toErrorMessage(error: unknown) {
               <span>{{ formatTimestamp(session.loginTime) }}</span>
             </article>
           </div>
-          <p v-else class="empty-note">No active sessions</p>
+          <p v-else class="empty-note">本次采样没有返回登录会话。Linux Agent 更新后会优先读取 who 输出。</p>
         </section>
 
         <section class="detail-section">
           <div class="section-head">
             <Terminal :size="16" />
-            <strong>Top processes</strong>
+            <strong>Top 进程</strong>
             <span>{{ detailSnapshot.processes?.length ?? 0 }}</span>
           </div>
           <div v-if="detailSnapshot.processes?.length" class="process-list">
@@ -522,7 +544,7 @@ function toErrorMessage(error: unknown) {
             >
               <div class="process-main">
                 <strong>{{ process.processName || '-' }}</strong>
-                <small>{{ process.commandLine || '-' }}</small>
+                <small>PID {{ process.pid ?? '-' }} / {{ process.commandLine || '-' }}</small>
               </div>
               <div class="process-meta">
                 <span>{{ process.username || '-' }}</span>
@@ -531,13 +553,13 @@ function toErrorMessage(error: unknown) {
               </div>
             </article>
           </div>
-          <p v-else class="empty-note">No process sample</p>
+          <p v-else class="empty-note">本次采样没有返回进程列表。请用新 agent 包重启后刷新。</p>
         </section>
 
         <section class="detail-section">
           <div class="section-head">
             <Activity :size="16" />
-            <strong>GPU detail</strong>
+            <strong>GPU 明细</strong>
             <span>{{ detailSnapshot.gpus?.length ?? 0 }}</span>
           </div>
           <div v-if="detailSnapshot.gpus?.length" class="gpu-list">
@@ -548,19 +570,19 @@ function toErrorMessage(error: unknown) {
               </div>
               <div class="gpu-stat-grid">
                 <div>
-                  <span>Memory</span>
+                  <span>显存</span>
                   <strong>{{ formatGpuMemoryPair(gpu.memoryUsedMb, gpu.memoryTotalMb) }}</strong>
                 </div>
                 <div>
-                  <span>Temp</span>
+                  <span>温度</span>
                   <strong>{{ typeof gpu.temperatureCelsius === 'number' ? `${gpu.temperatureCelsius.toFixed(1)} C` : '-' }}</strong>
                 </div>
                 <div>
-                  <span>Power</span>
+                  <span>功耗</span>
                   <strong>{{ typeof gpu.powerWatt === 'number' ? `${gpu.powerWatt.toFixed(1)} W` : '-' }}</strong>
                 </div>
                 <div>
-                  <span>Processes</span>
+                  <span>进程</span>
                   <strong>{{ gpu.processes?.length ?? 0 }}</strong>
                 </div>
               </div>
@@ -577,10 +599,10 @@ function toErrorMessage(error: unknown) {
                   <span>{{ formatMb(process.usedMemoryMb) }}</span>
                 </article>
               </div>
-              <p v-else class="empty-note compact">No GPU processes</p>
+              <p v-else class="empty-note compact">当前无 GPU 计算进程</p>
             </article>
           </div>
-          <p v-else class="empty-note">No GPU sample</p>
+          <p v-else class="empty-note">本次采样没有返回 GPU 信息。</p>
         </section>
       </template>
     </aside>
